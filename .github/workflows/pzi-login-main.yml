@@ -1,0 +1,55 @@
+name: Build and Publish pzi-login
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - pzi-login/**
+  workflow_dispatch:
+
+env:
+  DOCKER_REGISTRY_URL: 'elaniton.azurecr.io'
+  DOCKER_IMAGE_NAME: 'pzi/login'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: pzi-login
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install git version
+        uses: gittools/actions/gitversion/setup@v1.1.1
+        with:
+          versionSpec: '5.x'
+
+      - name: Determine Version
+        id: gitversion
+        uses: gittools/actions/gitversion/execute@v1.1.1
+
+      - name: Set up .NET Core
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: '8.x'
+          include-prerelease: true
+
+      - name: publish with versioned assemblies
+        run: dotnet publish -c Release /p:Version=${{ steps.gitversion.outputs.AssemblySemVer }} -o ./out
+
+      - name: write version to version.txt to output
+        run: echo '${{ steps.gitversion.outputs.SemVer }}' > ./out/version.txt
+
+      - name: Build docker image
+        run: docker build . --file Dockerfile --tag $DOCKER_REGISTRY_URL/$DOCKER_IMAGE_NAME:${{ steps.gitversion.outputs.semVer }}
+
+      - name: Push docker image to ACR
+        run: |
+          docker login -u ${{secrets.ACR_USER}} -p ${{secrets.ACR_PASSWORD}} $DOCKER_REGISTRY_URL
+          docker push $DOCKER_REGISTRY_URL/$DOCKER_IMAGE_NAME:${{ steps.gitversion.outputs.semVer }}
