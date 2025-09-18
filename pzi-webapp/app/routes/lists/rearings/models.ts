@@ -1,0 +1,7 @@
+export type Rearing = {
+  code: string;
+  displayName: string;
+  sort: number;
+  note?: string | null;
+  modifiedBy?: string;
+};

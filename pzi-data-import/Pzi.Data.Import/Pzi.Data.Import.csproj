@@ -1,0 +1,66 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<TargetFramework>net8.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<None Remove="Scripts\01_InitialTables_MigrationScript.sql" />
+		<None Remove="Scripts\02_TablesA-MigrationScript.sql" />
+		<None Remove="Scripts\03_TablesB-MigrationScript.sql" />
+		<None Remove="Scripts\04_SpecimenPlacements_OrganizationLevels_Mappings.sql" />
+		<None Remove="Scripts\05_Locations_Mapping.csv" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<EmbeddedResource Include="Scripts\02_TablesA-MigrationScript.sql">
+			<CopyToOutputDirectory>Never</CopyToOutputDirectory>
+		</EmbeddedResource>
+	</ItemGroup>
+
+	<ItemGroup>
+		<EmbeddedResource Include="Scripts\01_InitialTables_MigrationScript.sql">
+			<CopyToOutputDirectory>Never</CopyToOutputDirectory>
+		</EmbeddedResource>
+		<EmbeddedResource Include="Scripts\03_TablesB-MigrationScript.sql">
+			<CopyToOutputDirectory>Never</CopyToOutputDirectory>
+		</EmbeddedResource>
+		<EmbeddedResource Include="Scripts\04_SpecimenPlacements_OrganizationLevels_Mappings.sql" />
+		<EmbeddedResource Include="Scripts\05_CreateView-TaxonomyHierarchyView.sql" />
+		<EmbeddedResource Include="Scripts\06_CreateView-ExpositionHierarchyView.sql" />
+		<EmbeddedResource Include="Scripts\07_CreateView-OrganizationHierarchyView.sql" />
+		<EmbeddedResource Include="Scripts\08_CreateIndexes.sql" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="CsvHelper" Version="33.0.1" />
+		<PackageReference Include="Dapper" Version="2.1.35" />
+		<PackageReference Include="FastMember" Version="1.5.0" />
+		<PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.2" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Compile Update="SqlScripts.Designer.cs">
+			<DesignTime>True</DesignTime>
+			<AutoGen>True</AutoGen>
+			<DependentUpon>SqlScripts.resx</DependentUpon>
+		</Compile>
+	</ItemGroup>
+
+	<ItemGroup>
+		<EmbeddedResource Update="SqlScripts.resx">
+			<Generator>ResXFileCodeGenerator</Generator>
+			<LastGenOutput>SqlScripts.Designer.cs</LastGenOutput>
+		</EmbeddedResource>
+	</ItemGroup>
+
+	<ItemGroup>
+	  <None Update="Data\Locations.csv">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	</ItemGroup>
+
+</Project>

@@ -1,0 +1,32 @@
+@{
+  ViewData["Title"] = "Přihlášení";
+}
+
+@model LoginViewModel
+
+<div class="relative flex min-h-screen flex-col bg-background">
+    <form method="post" asp-controller="Authenticate" asp-action="Login">
+        <div class="rounded-xl border bg-card text-card-foreground shadow w-full max-w-sm">
+            <div class="flex flex-col space-y-1.5 p-6">
+                <h3 class="font-bold tracking-tight text-3xl">Přihlášení</h3>
+            </div>
+            <div class="p-6 pt-0 grid gap-4">
+                <div class="grid gap-2" data-rac="">
+                    <label class="text-md font-bold leading-none data-[disabled]:cursor-not-allowed data-[disabled]:opacity-70 group-data-[invalid]:text-destructive" id="react-aria-:R39uuuutkqH1:">Uživatel</label>
+                    <input asp-for="UserName" required="" name="userName" class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50 data-[focused]:outline-none data-[focused]:ring-2 data-[focused]:ring-ring data-[focused]:ring-offset-2 focus-visible:outline-none" data-rac="" value="" title="">
+                </div>
+                <div class="grid gap-2" data-rac="">
+                    <label class="text-md font-bold leading-none data-[disabled]:cursor-not-allowed data-[disabled]:opacity-70 group-data-[invalid]:text-destructive" id="react-aria-:R59uuuutkqH1:">Heslo</label>
+                    <input asp-for="Password" type="password" required="" name="password" class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50 data-[focused]:outline-none data-[focused]:ring-2 data-[focused]:ring-ring data-[focused]:ring-offset-2 focus-visible:outline-none" />
+                </div>
+            </div>
+            <div class="flex items-center p-6 pt-0">
+                <input asp-for="Callback" type="hidden" />
+                <input asp-for="ReturnUrl" type="hidden" />
+
+                <button type="submit" class="w-100 inline-flex items-center justify-center whitespace-nowrap rounded-md text-md font-medium ring-offset-background transition-colors data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[focus-visible]:outline-none data-[focus-visible]:ring-2 data-[focus-visible]:ring-ring data-[focus-visible]:ring-offset-2 focus-visible:outline-none bg-primary text-primary-foreground data-[hovered]:bg-primary/90 h-10 px-4 py-2 w-full">Přihlásit</button>
+                @*<button name="sso-login" class="w-100 inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[focus-visible]:outline-none data-[focus-visible]:ring-2 data-[focus-visible]:ring-ring data-[focus-visible]:ring-offset-2 focus-visible:outline-none bg-primary text-primary-foreground data-[hovered]:bg-primary/90 h-10 px-4 py-2 w-full">SSO</button> *@
+            </div>
+        </div>
+    </form>
+</div>
