@@ -1,0 +1,181 @@
+import jwt from 'jsonwebtoken';
+import jwksClient from 'jwks-rsa';
+import { auth0Config } from './auth0-config';
+
+export interface Auth0User {
+  sub: string;
+  email: string;
+  name: string;
+  picture?: string;
+  email_verified: boolean;
+  'custom:roles'?: string[];
+  'custom:permissions'?: string[];
+  'custom:tenant'?: string;
+  organizations?: string[];
+}
+
+export interface ProcessedUserData {
+  userId: string;
+  userName: string;
+  email: string;
+  roles: string[];
+  permissions: string[];
+  tenant?: string;
+  visibleTaxonomyStatuses: string[];
+  taxonomySearchByCz: boolean;
+  taxonomySearchByLat: boolean;
+}
+
+export class Auth0Service {
+  private static jwksClient = jwksClient({
+    jwksUri: `https://${auth0Config.domain}/.well-known/jwks.json`,
+    cache: true,
+    cacheMaxEntries: 5,
+    cacheMaxAge: 600000, // 10 minutes
+  });
+
+  static async verifyToken(token: string): Promise<Auth0User> {
+    try {
+      // Get the token header to extract the key ID
+      const decoded = jwt.decode(token, { complete: true });
+      if (!decoded || typeof decoded === 'string' || !decoded.header.kid) {
+        throw new Error('Invalid token format');
+      }
+
+      // Get the signing key from Auth0 JWKS
+      const key = await this.getSigningKey(decoded.header.kid);
+
+      // Verify the token with the public key
+      const verified = jwt.verify(token, key, {
+        issuer: `https://${auth0Config.domain}/`,
+        audience: auth0Config.audience,
+        algorithms: ['RS256']
+      }) as Auth0User;
+
+      return verified;
+    } catch (error) {
+      console.error('Token verification failed:', error);
+      throw new Error('Token verification failed');
+    }
+  }
+
+  private static async getSigningKey(kid: string): Promise<string> {
+    try {
+      const key = await this.jwksClient.getSigningKey(kid);
+      return key.getPublicKey();
+    } catch (error) {
+      console.error('Failed to get signing key:', error);
+      throw new Error('Failed to get signing key');
+    }
+  }
+
+  static async processUserForPziApi(auth0User: Auth0User): Promise<ProcessedUserData> {
+    // Extract roles from Auth0 custom claims or app_metadata
+    const roles = auth0User['custom:roles'] || [];
+    const permissions = auth0User['custom:permissions'] || [];
+    const tenant = auth0User['custom:tenant'];
+
+    // Map Auth0 roles to PZI permissions
+    const pziRoles = this.mapAuth0RolesToPzi(roles);
+    const pziPermissions = this.mapAuth0PermissionsToPzi(permissions, roles);
+
+    return {
+      userId: auth0User.sub,
+      userName: auth0User.email || auth0User.name,
+      email: auth0User.email,
+      roles: pziRoles,
+      permissions: pziPermissions,
+      tenant,
+      visibleTaxonomyStatuses: this.getVisibleTaxonomyStatuses(roles),
+      taxonomySearchByCz: this.getTaxonomySearchPreference(roles, 'cz'),
+      taxonomySearchByLat: this.getTaxonomySearchPreference(roles, 'lat')
+    };
+  }
+
+  private static mapAuth0RolesToPzi(auth0Roles: string[]): string[] {
+    const roleMapping: Record<string, string[]> = {
+      'admin': ['Administrator', 'Curator', 'Veterinarian', 'User'],
+      'curator': ['Curator', 'User'],
+      'veterinarian': ['Veterinarian', 'User'],
+      'user': ['User'],
+      'documentation': ['Documentation']
+    };
+
+    const pziRoles = new Set<string>();
+
+    auth0Roles.forEach(role => {
+      const mapped = roleMapping[role.toLowerCase()];
+      if (mapped) {
+        mapped.forEach(r => pziRoles.add(r));
+      }
+    });
+
+    return Array.from(pziRoles);
+  }
+
+  private static mapAuth0PermissionsToPzi(auth0Permissions: string[], roles: string[]): string[] {
+    const permissions = new Set<string>();
+
+    // Add permissions based on Auth0 custom permissions
+    auth0Permissions.forEach(permission => {
+      permissions.add(permission);
+    });
+
+    // Add permissions based on roles
+    roles.forEach(role => {
+      switch (role.toLowerCase()) {
+        case 'admin':
+          permissions.add('RECORDS:VIEW');
+          permissions.add('RECORDS:EDIT');
+          permissions.add('LISTS:VIEW');
+          permissions.add('LISTS:EDIT');
+          permissions.add('JOURNAL:ACCESS');
+          permissions.add('DOCUMENTATION_DEPARTMENT');
+          break;
+        case 'curator':
+          permissions.add('RECORDS:VIEW');
+          permissions.add('RECORDS:EDIT');
+          permissions.add('LISTS:VIEW');
+          permissions.add('JOURNAL:ACCESS');
+          break;
+        case 'veterinarian':
+          permissions.add('RECORDS:VIEW');
+          permissions.add('JOURNAL:ACCESS');
+          break;
+        case 'user':
+          permissions.add('RECORDS:VIEW');
+          break;
+        case 'documentation':
+          permissions.add('DOCUMENTATION_DEPARTMENT');
+          break;
+      }
+    });
+
+    return Array.from(permissions);
+  }
+
+  private static getVisibleTaxonomyStatuses(roles: string[]): string[] {
+    // Default taxonomy statuses based on roles
+    const hasAdmin = roles.some(role => role.toLowerCase() === 'admin');
+    const hasCurator = roles.some(role => role.toLowerCase() === 'curator');
+
+    if (hasAdmin || hasCurator) {
+      return ['active', 'inactive', 'draft', 'pending'];
+    }
+
+    return ['active'];
+  }
+
+  private static getTaxonomySearchPreference(roles: string[], type: 'cz' | 'lat'): boolean {
+    // Default search preferences based on roles and locale
+    const hasAdmin = roles.some(role => role.toLowerCase() === 'admin');
+    const hasCurator = roles.some(role => role.toLowerCase() === 'curator');
+
+    if (hasAdmin || hasCurator) {
+      return true; // Enable both Czech and Latin search for admins/curators
+    }
+
+    // For regular users, enable Czech by default, Latin optional
+    return type === 'cz';
+  }
+}

@@ -4,6 +4,8 @@ using Microsoft.OData.Edm;
 using Microsoft.OData.ModelBuilder;
 using PziApi.CrossCutting.Auth;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 using PziApi.TaxonomyClasses;
 using PziApi.TaxonomyOrders;
 using PziApi.Specimens;
@@ -182,11 +184,47 @@ internal class Program
         In = NSwag.OpenApiSecurityApiKeyLocation.Header
       });
 
+      config.AddSecurity("Bearer", Enumerable.Empty<string>(), new NSwag.OpenApiSecurityScheme()
+      {
+        Type = NSwag.OpenApiSecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        Description = "Auth0 JWT Bearer Token Authentication"
+      });
+
       config.OperationProcessors.Add(new ODataOperationProcessor());
       config.OperationProcessors.Add(new RemoveODataQueryOptionsProcessor());
     });
 
+    // Configure Auth0 JWT Bearer authentication
+    var auth0Domain = builder.Configuration["Auth0:Domain"];
+    var auth0Audience = builder.Configuration["Auth0:Audience"];
+
+    if (!string.IsNullOrEmpty(auth0Domain) && !string.IsNullOrEmpty(auth0Audience))
+    {
+      builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+        .AddJwtBearer(options =>
+        {
+          options.Authority = $"https://{auth0Domain}/";
+          options.Audience = auth0Audience;
+          options.TokenValidationParameters = new TokenValidationParameters
+          {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ClockSkew = TimeSpan.FromMinutes(5)
+          };
+        });
+
+      builder.Services.AddAuthorization();
+    }
+
+    // Register middlewares
+    builder.Services.AddMemoryCache();
     builder.Services.AddTransient<ApiKeyValidationMiddleware>();
+    builder.Services.AddTransient<Auth0JwtValidationMiddleware>();
+    builder.Services.AddHttpClient<Auth0JwtValidationMiddleware>();
 
     builder.Services.Configure<PermissionOptions>(builder.Configuration.GetSection(PermissionOptions.SectionName));
 
@@ -232,11 +270,16 @@ internal class Program
         config.DocumentPath = "/swagger/{documentName}/swagger.json";
         config.DocExpansion = "list";
 
-        config.ServerUrl = "https://metazoa-t.api.zoopraha.cz";
+        config.ServerUrl = builder.Configuration["SwaggerConfig:ServerUrl"] ?? "https://localhost:5000";
       });
     }
 
-    app.UseMiddleware<ApiKeyValidationMiddleware>();
+    // Configure authentication and authorization middleware
+    app.UseAuthentication();
+    app.UseAuthorization();
+
+    // Use Auth0 JWT validation middleware (which also supports API key fallback)
+    app.UseMiddleware<Auth0JwtValidationMiddleware>();
 
     RegisterEndpoints(app);
 
