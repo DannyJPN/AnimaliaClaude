@@ -221,6 +221,7 @@ internal class Program
     }
 
     // Register middlewares
+    builder.Services.AddMemoryCache();
     builder.Services.AddTransient<ApiKeyValidationMiddleware>();
     builder.Services.AddTransient<Auth0JwtValidationMiddleware>();
     builder.Services.AddHttpClient<Auth0JwtValidationMiddleware>();
@@ -269,7 +270,7 @@ internal class Program
         config.DocumentPath = "/swagger/{documentName}/swagger.json";
         config.DocExpansion = "list";
 
-        config.ServerUrl = "https://metazoa-t.api.zoopraha.cz";
+        config.ServerUrl = builder.Configuration["SwaggerConfig:ServerUrl"] ?? "https://localhost:5000";
       });
     }
 

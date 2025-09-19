@@ -19,6 +19,7 @@ const { ManagementClient } = require('auth0');
 const { Client } = require('pg');
 const fs = require('fs').promises;
 const path = require('path');
+const crypto = require('crypto');
 
 // Configuration
 const config = {
@@ -170,7 +171,9 @@ async function setupOrganizations() {
           name: orgKey,
           display_name: orgKey.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()),
           branding: {
-            logo_url: `https://your-domain.com/logos/${orgKey}.png`
+            logo_url: process.env.ORGANIZATION_LOGO_BASE_URL
+              ? `${process.env.ORGANIZATION_LOGO_BASE_URL}/${orgKey}.png`
+              : undefined
           }
         });
 
@@ -182,6 +185,21 @@ async function setupOrganizations() {
     console.error('Error setting up organizations:', error);
     throw error;
   }
+}
+
+/**
+ * Generate a cryptographically secure temporary password
+ */
+function generateSecurePassword() {
+  // Generate 16 random bytes and convert to base64
+  const randomBytes = crypto.randomBytes(16);
+  const base64 = randomBytes.toString('base64');
+
+  // Remove potentially confusing characters and add required special chars
+  const cleanBase64 = base64.replace(/[+/=]/g, '');
+
+  // Ensure password meets complexity requirements
+  return `Temp${cleanBase64}!#`;
 }
 
 /**
@@ -258,7 +276,7 @@ async function createOrUpdateUser(userData, dryRun = false) {
     nickname: userData.nickname || userData.email.split('@')[0],
     email_verified: true,
     connection: 'Username-Password-Authentication',
-    password: `TempPass${Math.random().toString(36).substring(2)}!`, // Temporary password
+    password: generateSecurePassword(), // Secure temporary password
     app_metadata: {
       roles: roles,
       permissions: permissions,

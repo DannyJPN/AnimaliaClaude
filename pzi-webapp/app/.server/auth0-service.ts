@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken';
+import jwksClient from 'jwks-rsa';
 import { auth0Config } from './auth0-config';
 
 export interface Auth0User {
@@ -26,16 +27,45 @@ export interface ProcessedUserData {
 }
 
 export class Auth0Service {
+  private static jwksClient = jwksClient({
+    jwksUri: `https://${auth0Config.domain}/.well-known/jwks.json`,
+    cache: true,
+    cacheMaxEntries: 5,
+    cacheMaxAge: 600000, // 10 minutes
+  });
+
   static async verifyToken(token: string): Promise<Auth0User> {
     try {
-      // In production, verify with Auth0 public keys
-      const decoded = jwt.decode(token) as Auth0User;
-      if (!decoded) {
-        throw new Error('Invalid token');
+      // Get the token header to extract the key ID
+      const decoded = jwt.decode(token, { complete: true });
+      if (!decoded || typeof decoded === 'string' || !decoded.header.kid) {
+        throw new Error('Invalid token format');
       }
-      return decoded;
+
+      // Get the signing key from Auth0 JWKS
+      const key = await this.getSigningKey(decoded.header.kid);
+
+      // Verify the token with the public key
+      const verified = jwt.verify(token, key, {
+        issuer: `https://${auth0Config.domain}/`,
+        audience: auth0Config.audience,
+        algorithms: ['RS256']
+      }) as Auth0User;
+
+      return verified;
     } catch (error) {
+      console.error('Token verification failed:', error);
       throw new Error('Token verification failed');
+    }
+  }
+
+  private static async getSigningKey(kid: string): Promise<string> {
+    try {
+      const key = await this.jwksClient.getSigningKey(kid);
+      return key.getPublicKey();
+    } catch (error) {
+      console.error('Failed to get signing key:', error);
+      throw new Error('Failed to get signing key');
     }
   }
 

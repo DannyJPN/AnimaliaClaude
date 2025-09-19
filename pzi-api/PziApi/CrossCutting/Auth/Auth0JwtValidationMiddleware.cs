@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -11,15 +12,23 @@ public class Auth0JwtValidationMiddleware : IMiddleware
   private readonly IConfiguration _configuration;
   private readonly ILogger<Auth0JwtValidationMiddleware> _logger;
   private readonly HttpClient _httpClient;
+  private readonly IMemoryCache _memoryCache;
+  private readonly TimeSpan _jwksCacheDuration = TimeSpan.FromMinutes(10);
+  private const string JwksCacheKeyPrefix = "Auth0_JWKS_";
 
   public Auth0JwtValidationMiddleware(
     IConfiguration configuration,
     ILogger<Auth0JwtValidationMiddleware> logger,
-    HttpClient httpClient)
+    HttpClient httpClient,
+    IMemoryCache memoryCache)
   {
     _configuration = configuration;
     _logger = logger;
     _httpClient = httpClient;
+    _memoryCache = memoryCache;
+
+    // Configure HttpClient timeout
+    _httpClient.Timeout = TimeSpan.FromSeconds(30);
   }
 
   public async Task InvokeAsync(HttpContext context, RequestDelegate next)
@@ -64,9 +73,10 @@ public class Auth0JwtValidationMiddleware : IMiddleware
     }
     catch (Exception ex)
     {
-      _logger.LogError(ex, "Token validation failed");
+      var correlationId = context.TraceIdentifier;
+      _logger.LogError(ex, "Token validation failed for request {CorrelationId}", correlationId);
       context.Response.StatusCode = 401;
-      await context.Response.WriteAsync("Token validation failed");
+      await context.Response.WriteAsync($"Token validation failed. Correlation ID: {correlationId}");
     }
   }
 
@@ -179,24 +189,73 @@ public class Auth0JwtValidationMiddleware : IMiddleware
 
       return new ClaimsPrincipal(identity);
     }
+    catch (SecurityTokenValidationException ex)
+    {
+      _logger.LogWarning(ex, "Auth0 token validation failed: {Message}", ex.Message);
+      return null;
+    }
+    catch (SecurityTokenExpiredException ex)
+    {
+      _logger.LogWarning(ex, "Auth0 token has expired");
+      return null;
+    }
+    catch (SecurityTokenInvalidSignatureException ex)
+    {
+      _logger.LogWarning(ex, "Auth0 token has invalid signature");
+      return null;
+    }
     catch (Exception ex)
     {
-      _logger.LogError(ex, "Error validating Auth0 token");
+      _logger.LogError(ex, "Unexpected error validating Auth0 token for domain: {Domain}", domain);
       return null;
     }
   }
 
   private async Task<JsonWebKeySet?> GetAuth0PublicKeys(string domain)
   {
+    var cacheKey = $"{JwksCacheKeyPrefix}{domain}";
+
+    // Try to get from cache first
+    if (_memoryCache.TryGetValue(cacheKey, out JsonWebKeySet? cachedJwks))
+    {
+      _logger.LogDebug("Retrieved JWKS from cache for domain: {Domain}", domain);
+      return cachedJwks;
+    }
+
     try
     {
       var jwksUri = $"https://{domain}/.well-known/jwks.json";
+      _logger.LogDebug("Fetching JWKS from Auth0 for domain: {Domain}", domain);
+
       var response = await _httpClient.GetStringAsync(jwksUri);
-      return new JsonWebKeySet(response);
+      var jwks = new JsonWebKeySet(response);
+
+      // Cache the JWKS with expiration
+      _memoryCache.Set(cacheKey, jwks, new MemoryCacheEntryOptions
+      {
+        AbsoluteExpirationRelativeToNow = _jwksCacheDuration,
+        Priority = CacheItemPriority.High,
+        Size = 1
+      });
+
+      _logger.LogDebug("Cached JWKS for domain: {Domain} for {Duration} minutes",
+        domain, _jwksCacheDuration.TotalMinutes);
+
+      return jwks;
+    }
+    catch (TaskCanceledException ex) when (ex.InnerException is TimeoutException)
+    {
+      _logger.LogError(ex, "Timeout while retrieving JWKS from Auth0 domain: {Domain}", domain);
+      return null;
+    }
+    catch (HttpRequestException ex)
+    {
+      _logger.LogError(ex, "HTTP error while retrieving JWKS from Auth0 domain: {Domain}", domain);
+      return null;
     }
     catch (Exception ex)
     {
-      _logger.LogError(ex, "Failed to retrieve JWKS from Auth0");
+      _logger.LogError(ex, "Failed to retrieve JWKS from Auth0 domain: {Domain}", domain);
       return null;
     }
   }
