@@ -1,0 +1,287 @@
+{
+  "environments": {
+    "test": {
+      "webApp": {
+        "url": "http://localhost:3001",
+        "healthEndpoint": "/health"
+      },
+      "api": {
+        "url": "http://localhost:8081",
+        "healthEndpoint": "/api/health"
+      },
+      "loginService": {
+        "url": "http://localhost:5001",
+        "healthEndpoint": "/health"
+      },
+      "database": {
+        "host": "localhost",
+        "port": 5433,
+        "name": "pzi_test",
+        "user": "postgres",
+        "password": "test_password"
+      }
+    },
+    "development": {
+      "webApp": {
+        "url": "http://localhost:3000",
+        "healthEndpoint": "/health"
+      },
+      "api": {
+        "url": "http://localhost:8080",
+        "healthEndpoint": "/api/health"
+      },
+      "loginService": {
+        "url": "http://localhost:5000",
+        "healthEndpoint": "/health"
+      },
+      "database": {
+        "host": "localhost",
+        "port": 5432,
+        "name": "pzi",
+        "user": "postgres",
+        "password": "Xserver@101"
+      }
+    },
+    "production": {
+      "webApp": {
+        "url": "https://pzi.yourdomain.com",
+        "healthEndpoint": "/health"
+      },
+      "api": {
+        "url": "https://api.pzi.yourdomain.com",
+        "healthEndpoint": "/api/health"
+      },
+      "loginService": {
+        "url": "https://login.pzi.yourdomain.com",
+        "healthEndpoint": "/health"
+      },
+      "database": {
+        "host": "prod-db.yourdomain.com",
+        "port": 5432,
+        "name": "pzi_prod",
+        "user": "pzi_user",
+        "password": "${DATABASE_PASSWORD}"
+      }
+    }
+  },
+  "auth0": {
+    "domain": "your-auth0-domain.auth0.com",
+    "audience": "your-api-audience",
+    "testEndpoint": "/.well-known/openid-configuration"
+  },
+  "externalServices": [
+    {
+      "name": "auth0",
+      "url": "https://your-auth0-domain.auth0.com/api/v2/",
+      "healthEndpoint": "/.well-known/openid-configuration",
+      "timeout": 10000
+    },
+    {
+      "name": "redis",
+      "url": "redis://localhost:6379",
+      "healthEndpoint": "ping",
+      "timeout": 5000
+    }
+  ],
+  "multiTenant": {
+    "enabled": true,
+    "testTenants": [
+      {
+        "id": "tenant-1",
+        "name": "Test Zoo Prague",
+        "database": {
+          "schema": "tenant_1"
+        }
+      },
+      {
+        "id": "tenant-2",
+        "name": "Test Zoo Brno",
+        "database": {
+          "schema": "tenant_2"
+        }
+      }
+    ],
+    "isolationTests": {
+      "enabled": true,
+      "crossTenantAccessAttempts": 10,
+      "concurrentTenantRequests": 5
+    }
+  },
+  "thresholds": {
+    "responseTime": {
+      "api": 2000,
+      "webapp": 5000,
+      "database": 1000
+    },
+    "errorRate": {
+      "warning": 0.01,
+      "critical": 0.05
+    },
+    "resources": {
+      "cpuUsage": {
+        "warning": 70,
+        "critical": 85
+      },
+      "memoryUsage": {
+        "warning": 80,
+        "critical": 90
+      },
+      "diskUsage": {
+        "warning": 85,
+        "critical": 95
+      }
+    },
+    "database": {
+      "connectionTime": 500,
+      "queryTime": 1000,
+      "activeConnections": 80
+    }
+  },
+  "security": {
+    "enabled": true,
+    "checks": [
+      {
+        "name": "unauthenticated_access",
+        "endpoint": "/api/users",
+        "expectedStatus": 401,
+        "description": "Verify unauthenticated requests are blocked"
+      },
+      {
+        "name": "cross_tenant_access",
+        "endpoint": "/api/tenants/{tenant-id}/specimens",
+        "expectedStatus": 403,
+        "description": "Verify cross-tenant data access is prevented"
+      },
+      {
+        "name": "cors_headers",
+        "endpoint": "/api/health",
+        "headers": {
+          "Origin": "http://evil.com"
+        },
+        "expectedHeaders": ["Access-Control-Allow-Origin"],
+        "description": "Verify CORS headers are properly configured"
+      }
+    ]
+  },
+  "alerting": {
+    "enabled": true,
+    "channels": {
+      "webhooks": [
+        {
+          "name": "slack",
+          "url": "${SLACK_WEBHOOK_URL}",
+          "enabled": false,
+          "events": ["critical", "warning"],
+          "format": "slack"
+        },
+        {
+          "name": "discord",
+          "url": "${DISCORD_WEBHOOK_URL}",
+          "enabled": false,
+          "events": ["critical"],
+          "format": "discord"
+        }
+      ],
+      "email": {
+        "enabled": false,
+        "smtp": {
+          "host": "${SMTP_HOST}",
+          "port": 587,
+          "secure": false,
+          "auth": {
+            "user": "${SMTP_USER}",
+            "pass": "${SMTP_PASSWORD}"
+          }
+        },
+        "templates": {
+          "critical": "templates/critical-alert.html",
+          "warning": "templates/warning-alert.html"
+        },
+        "recipients": [
+          "${ADMIN_EMAIL}",
+          "${DEV_TEAM_EMAIL}"
+        ]
+      }
+    },
+    "rules": [
+      {
+        "name": "service_down",
+        "condition": "service.status === 'down'",
+        "severity": "critical",
+        "cooldown": 300000
+      },
+      {
+        "name": "high_response_time",
+        "condition": "service.responseTime > thresholds.responseTime",
+        "severity": "warning",
+        "cooldown": 600000
+      },
+      {
+        "name": "tenant_isolation_breach",
+        "condition": "security.crossTenantAccess === true",
+        "severity": "critical",
+        "cooldown": 0
+      }
+    ]
+  },
+  "monitoring": {
+    "interval": 60000,
+    "retries": 3,
+    "timeout": 10000,
+    "parallel": true,
+    "metrics": {
+      "retention": "30d",
+      "aggregation": "5m",
+      "storage": "monitoring/metrics"
+    },
+    "logging": {
+      "level": "info",
+      "file": "monitoring/logs/health-checks.log",
+      "maxSize": "10MB",
+      "maxFiles": 5
+    }
+  },
+  "performance": {
+    "loadTesting": {
+      "enabled": true,
+      "scenarios": [
+        {
+          "name": "normal_load",
+          "virtualUsers": 10,
+          "duration": "5m",
+          "rampUp": "30s"
+        },
+        {
+          "name": "stress_test",
+          "virtualUsers": 50,
+          "duration": "2m",
+          "rampUp": "10s"
+        }
+      ]
+    },
+    "metrics": [
+      "response_time",
+      "throughput",
+      "error_rate",
+      "concurrent_users"
+    ]
+  },
+  "reports": {
+    "directory": "monitoring/reports",
+    "formats": ["json", "html", "csv"],
+    "archive": true,
+    "retention": "90d",
+    "generation": {
+      "daily": true,
+      "weekly": true,
+      "monthly": true
+    },
+    "distribution": {
+      "email": {
+        "enabled": false,
+        "recipients": ["${REPORT_EMAIL}"],
+        "schedule": "0 8 * * 1"
+      }
+    }
+  }
+}
