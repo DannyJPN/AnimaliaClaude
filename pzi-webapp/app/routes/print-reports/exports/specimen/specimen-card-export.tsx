@@ -198,7 +198,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return new Response(xlsxBuffer, {
     status: 200,
     headers: {
-      "Content-Disposition": `inline;filename=specimencard_${getXlsFileTimestamp()}.xlsx`,
+      "Content-Disposition": `inline;filename=karta-exemplare_${getXlsFileTimestamp()}.xlsx`,
       "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       'Cache-Control': 'no-cache',
     },

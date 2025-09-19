@@ -132,7 +132,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const xlsxBuffer = await wb.xlsx.writeBuffer();
 
-  const fileName = `inzoostatus_${getXlsFileTimestamp()}.xlsx`;
+  const fileName = `v-majetku_${getXlsFileTimestamp()}.xlsx`;
 
   return new Response(xlsxBuffer, {
     status: 200,

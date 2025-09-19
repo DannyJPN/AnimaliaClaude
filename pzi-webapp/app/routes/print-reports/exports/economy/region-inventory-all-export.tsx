@@ -147,13 +147,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
     const [wb] = await renderPrintExport(templateBlocks, dataBlocks);
     const xlsxBuffer = await wb.xlsx.writeBuffer();
 
-    const fileName = `stavKeDni-po-rajonech_${getXlsFileTimestamp()}`;
+    const fileName = `inventura-po-rajonech_${getXlsFileTimestamp()}.xlsx`;
 
     return new Response(xlsxBuffer, {
       status: 200,
       headers: {
         "Content-Type": "application/vnd.ms-excel",
-        "Content-Disposition": `inline;filename=${fileName}.xlsx`,
+        "Content-Disposition": `inline;filename=${fileName}`,
         "Cache-Control": "no-cache"
       }
     });

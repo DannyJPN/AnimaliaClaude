@@ -92,7 +92,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const dateFromFormatted = minDate.replace(/\//g, "");
   const dateToFormatted = maxDate.replace(/\//g, "");
-  const fileName = `w_dNarozeni_${dateFromFormatted}_${dateToFormatted}-${getXlsFileTimestamp()}.xlsx`;
+  const fileName = `statistika-narozeni_${dateFromFormatted}_${dateToFormatted}_${getXlsFileTimestamp()}.xlsx`;
 
   return new Response(xlsxBuffer, {
     status: 200,

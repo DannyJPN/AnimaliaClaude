@@ -180,7 +180,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
     const xlsxBuffer = await wb.xlsx.writeBuffer();
 
-    const fileName = `w_dotazdeponace_${language}_${getXlsFileTimestamp()}.xlsx`;
+    const fileName = `dotaz-k-deponacim_${language}_${getXlsFileTimestamp()}.xlsx`;
 
     return new Response(xlsxBuffer, {
       status: 200,

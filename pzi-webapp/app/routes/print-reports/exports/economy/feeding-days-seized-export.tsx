@@ -116,7 +116,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const exportData: SpeciesDto[] = parsedResponse.item || [];
 
-  const fileName = `zabaveno_krmne_dny_${isVertebrate ? 'vertebrate' : 'invertebrate'}_${getXlsFileTimestamp()}.xlsx`;
+  const fileName = `krmne-dny-zabavenych_${isVertebrate ? 'obratlovci' : 'bezobratlci'}_${getXlsFileTimestamp()}.xlsx`;
 
   const dataBlocks = toExportBlocks(exportData, minDate, maxDate);
   const templateBlocks = await prepareTemplateBlocks('statistika__zabaveno_krmne_dny.xlsx', 'zabaveno_krmne_dny');

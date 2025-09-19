@@ -164,7 +164,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const [workbook] = await renderPrintExport(templateBlocks, dataBlocks);
   const buffer = await workbook.xlsx.writeBuffer();
   
-  const fileName = `in_zoo_by_region_${vertebrateType}_${getXlsFileTimestamp()}.xlsx`;
+  const fileName = `v-majetku-po-rajonech_${vertebrateType}_${getXlsFileTimestamp()}.xlsx`;
   
   return new Response(buffer, {
     status: 200,

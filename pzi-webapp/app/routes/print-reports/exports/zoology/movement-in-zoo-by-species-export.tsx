@@ -104,7 +104,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const dateFromFormatted = minDate.replace(/\//g, "");
   const dateToFormatted = maxDate.replace(/\//g, "");
   const timestamp = getXlsFileTimestamp();
-  const fileName = `w_pohybvzoo_druh_${dateFromFormatted}_${dateToFormatted}_${timestamp}.xlsx`;
+  const fileName = `pohyb-v-zoo-podle-druhu_${dateFromFormatted}_${dateToFormatted}_${timestamp}.xlsx`;
   
   return new Response(xlsxBuffer, {
     status: 200,

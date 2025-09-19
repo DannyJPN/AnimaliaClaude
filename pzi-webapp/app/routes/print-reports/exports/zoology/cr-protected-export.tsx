@@ -5,6 +5,7 @@ import { apiCall, processResponse } from "~/.server/api-actions";
 import { BlockData, prepareTemplateBlocks, renderPrintExport } from "~/.server/print-templates/xls-template-exports";
 import { pziConfig } from "~/.server/pzi-config";
 import { requireLoggedInUser } from "~/.server/user-session";
+import { getXlsFileTimestamp } from "~/utils/date-utils";
 
 export type SpeciesInfoDto = {
   nameLat: string;
@@ -81,7 +82,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
     const xlsxBuffer = await wb.xlsx.writeBuffer();
     
-    const fileName = `cr-protected-species.xlsx`;
+    const fileName = `zvlaste-chranene-druhy-cr_${getXlsFileTimestamp()}.xlsx`;
 
     return new Response(xlsxBuffer, {
       status: 200,

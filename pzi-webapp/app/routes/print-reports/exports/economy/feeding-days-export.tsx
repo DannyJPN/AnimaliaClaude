@@ -121,7 +121,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     
     const xlsxBuffer = await wb.xlsx.writeBuffer();
 
-    const fileName = `krmne_dny_${getXlsFileTimestamp()}.xlsx`;
+    const fileName = `krmne-dny-druhu_${getXlsFileTimestamp()}.xlsx`;
 
     return new Response(xlsxBuffer, {
       status: 200,
