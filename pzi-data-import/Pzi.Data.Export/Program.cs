@@ -3,6 +3,7 @@ using Npgsql;
 using Pzi.Data.Export.Services;
 using System.Data;
 using System.Diagnostics;
+using System.Text;
 
 class Program
 {
@@ -70,23 +71,28 @@ class Program
     }
   }
 
-  static async Task CleanupTargetDatabaseAsync(string targetSchema, string sqlServerConnectionString)
+  static async Task CleanupTargetDatabaseAsync(string targetSchema, string postgresConnectionString)
   {
-    var sql = $@"
-            IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = N'{targetSchema}' )
-	            EXEC('CREATE SCHEMA [{targetSchema}]');
+    await using var connection = new NpgsqlConnection(postgresConnectionString);
+    await connection.OpenAsync();
 
-            DECLARE @sql NVARCHAR(MAX) = '';
+    // Create schema if not exists
+    var createSchemaSQL = $"CREATE SCHEMA IF NOT EXISTS \"{targetSchema}\"";
+    await connection.ExecuteAsync(createSchemaSQL);
 
-            SELECT @sql += 'IF OBJECT_ID(''' + TABLE_SCHEMA + '.' + TABLE_NAME + ''', ''U'') IS NOT NULL DROP TABLE ' + QUOTENAME(TABLE_SCHEMA) + '.' + QUOTENAME(TABLE_NAME) + '; '
-            FROM INFORMATION_SCHEMA.TABLES
-            WHERE TABLE_SCHEMA = '{targetSchema}';
+    // Get all tables in the schema and drop them
+    var getTablesSQL = @"
+      SELECT table_name
+      FROM information_schema.tables
+      WHERE table_schema = @schema AND table_type = 'BASE TABLE'";
 
-            EXEC sp_executesql @sql;";
+    var tables = await connection.QueryAsync<string>(getTablesSQL, new { schema = targetSchema });
 
-    await using var sqlConnection = new NpgsqlConnection(sqlServerConnectionString);
-    await sqlConnection.OpenAsync();
-    await sqlConnection.ExecuteAsync(sql);
+    foreach (var table in tables)
+    {
+      var dropSQL = $"DROP TABLE IF EXISTS \"{targetSchema}\".\"{table}\" CASCADE";
+      await connection.ExecuteAsync(dropSQL);
+    }
 
     Console.WriteLine("Target database cleanup finished.");
   }
@@ -114,32 +120,32 @@ class Program
     Console.WriteLine($"Table [{tableName}] processed. ({sw.Elapsed})");
   }
 
-  static async Task CreateSqlTableIfNotExistsAsync(NpgsqlConnection sqlConnection, string schema, string tableName, DataTable data)
+  static async Task CreateSqlTableIfNotExistsAsync(NpgsqlConnection connection, string schema, string tableName, DataTable data)
   {
-    var createTableCommand = $"CREATE TABLE [{schema}].[{tableName}] (";
+    var createTableCommand = $"CREATE TABLE IF NOT EXISTS \"{schema}\".\"{tableName}\" (";
 
     foreach (DataColumn column in data.Columns)
     {
-      createTableCommand += $"[{column.ColumnName}] {GetSqlDataType(column.DataType)},";
+      createTableCommand += $"\"{column.ColumnName}\" {GetPostgreSqlDataType(column.DataType)},";
     }
 
     createTableCommand = createTableCommand.TrimEnd(',') + ");";
-    await using var command = new SqlCommand(createTableCommand, sqlConnection);
+    await using var command = new NpgsqlCommand(createTableCommand, connection);
     await command.ExecuteNonQueryAsync();
 
-    Console.WriteLine($"Table [{schema}].[{tableName}] created.");
+    Console.WriteLine($"Table \"{schema}\".\"{tableName}\" created.");
   }
 
-  static string GetSqlDataType(Type type)
+  static string GetPostgreSqlDataType(Type type)
   {
     return type switch
     {
-      _ when type == typeof(int) => "INT",
-      _ when type == typeof(string) => "NVARCHAR(MAX)",
-      _ when type == typeof(DateTime) => "DATETIME",
-      _ when type == typeof(bool) => "BIT",
+      _ when type == typeof(int) => "INTEGER",
+      _ when type == typeof(string) => "TEXT",
+      _ when type == typeof(DateTime) => "TIMESTAMP",
+      _ when type == typeof(bool) => "BOOLEAN",
       _ when type == typeof(decimal) => "DECIMAL(18,2)",
-      _ => "NVARCHAR(MAX)"
+      _ => "TEXT"
     };
   }
 
@@ -156,40 +162,64 @@ class Program
       await connection.OpenAsync();
     }
 
-    using (var bulkCopy = new SqlBulkCopy(connection))
+    try
     {
-      bulkCopy.DestinationTableName = $"{schema}.{tableName}";
-      //bulkCopy.BatchSize = 10000;
-      bulkCopy.BulkCopyTimeout = 600;
+      // Use PostgreSQL COPY for bulk insert
+      var columnNames = string.Join(", ", data.Columns.Cast<DataColumn>().Select(c => $"\"{c.ColumnName}\""));
+      var copyCommand = $"COPY \"{schema}\".\"{tableName}\" ({columnNames}) FROM STDIN WITH (FORMAT CSV)";
 
-      foreach (DataColumn column in data.Columns)
+      await using var writer = await connection.BeginTextImportAsync(copyCommand);
+
+      foreach (DataRow row in data.Rows)
       {
-        bulkCopy.ColumnMappings.Add(column.ColumnName, column.ColumnName);
+        var values = new List<string>();
+        foreach (var item in row.ItemArray)
+        {
+          if (item == null || item == DBNull.Value)
+          {
+            values.Add("");
+          }
+          else if (item is string str)
+          {
+            // Escape quotes and wrap in quotes
+            values.Add($"\"{str.Replace("\"", "\"\"")}\"");
+          }
+          else if (item is DateTime dt)
+          {
+            values.Add($"\"{dt:yyyy-MM-dd HH:mm:ss}\"");
+          }
+          else if (item is bool b)
+          {
+            values.Add(b ? "true" : "false");
+          }
+          else
+          {
+            values.Add($"\"{item}\"");
+          }
+        }
+        await writer.WriteLineAsync(string.Join(",", values));
       }
 
-      try
-      {
-        await bulkCopy.WriteToServerAsync(data);
-      }
-      catch (Exception ex)
-      {
-        Console.WriteLine($"Error to add data: {ex.Message}");
-      }
+      await writer.FlushAsync();
+    }
+    catch (Exception ex)
+    {
+      Console.WriteLine($"Error to add data: {ex.Message}");
     }
 
-    Console.WriteLine($"Data inserted into table [{schema}].[{tableName}].");
+    Console.WriteLine($"Data inserted into table \"{schema}\".\"{tableName}\".");
   }
 
 
-  static async Task InsertDataIntoSqlAsync_old(NpgsqlConnection sqlConnection, string schema, string tableName, DataTable data)
+  static async Task InsertDataIntoSqlAsync_old(NpgsqlConnection connection, string schema, string tableName, DataTable data)
   {
     foreach (DataRow row in data.Rows)
     {
-      var columns = string.Join(",", data.Columns.Cast<DataColumn>().Select(c => $"[{c.ColumnName}]"));
+      var columns = string.Join(",", data.Columns.Cast<DataColumn>().Select(c => $"\"{c.ColumnName}\""));
       var values = string.Join(",", data.Columns.Cast<DataColumn>().Select(c => $"@{c.ColumnName}"));
 
-      var insertCommand = $"INSERT INTO [{schema}].[{tableName}] ({columns}) VALUES ({values})";
-      await using var command = new SqlCommand(insertCommand, sqlConnection);
+      var insertCommand = $"INSERT INTO \"{schema}\".\"{tableName}\" ({columns}) VALUES ({values})";
+      await using var command = new NpgsqlCommand(insertCommand, connection);
 
       foreach (DataColumn column in data.Columns)
       {
@@ -199,6 +229,6 @@ class Program
       await command.ExecuteNonQueryAsync();
     }
 
-    Console.WriteLine($"Data inserted into table [{schema}].[{tableName}].");
+    Console.WriteLine($"Data inserted into table \"{schema}\".\"{tableName}\".");
   }
 }

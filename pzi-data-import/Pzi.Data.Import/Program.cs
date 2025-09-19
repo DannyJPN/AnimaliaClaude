@@ -95,25 +95,6 @@ class Program
     Console.WriteLine($"Total import time: {overallStopwatch.Elapsed}.");
   }
 
-  // NOTE: Currently we will use initial script to drop and create tables to simplify process
-  static async Task CleanupDatabaseAsync(SqlConnection sqlConnection)
-  {
-    var sql = @"
-            DECLARE @sql NVARCHAR(MAX);
-
-            EXEC sp_msforeachtable 'ALTER TABLE ? NOCHECK CONSTRAINT all;'
-
-            SELECT @sql = STRING_AGG('TRUNCATE TABLE [' + TABLE_SCHEMA + '].[' + TABLE_NAME + '];', CHAR(13) + CHAR(10))
-            FROM INFORMATION_SCHEMA.TABLES
-            WHERE TABLE_SCHEMA = 'dbo'
-            AND TABLE_TYPE = 'BASE TABLE';
-
-            EXEC sp_executesql @sql;
-
-            EXEC sp_msforeachtable 'ALTER TABLE ? WITH CHECK CHECK CONSTRAINT all;'";
-
-    await sqlConnection.ExecuteAsync(sql);
-
-    Console.WriteLine("Target database cleanup finished.");
-  }
+  // NOTE: This method was removed as it used SQL Server specific commands
+  // Database cleanup is now handled by the migration scripts
 }

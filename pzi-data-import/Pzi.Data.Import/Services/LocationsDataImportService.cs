@@ -106,36 +106,36 @@ namespace Pzi.Data.Import.Services
             await BulkInsertStagingTableAsync(calculatedData, connection, transaction);
 
             await connection.ExecuteAsync(@$"
-              INSERT INTO [Locations] (
-                              Name, ObjectNumber, RoomNumber, AvailableForVisitors,
-                              LocationTypeCode, Note, OrganizationLevelId, ExpositionSetId, ModifiedBy, ModifiedAt)
-              SELECT 
-                t.Name,
-                t.ObjectNumber,
-                t.RoomNumber,
-                t.AvailableForVisitors,
-                t.LocationTypeCode,
-                t.Note,
-                ol.OrganizationLevelId,
-                s.Id AS ExpositionSetId,
-                'system' AS CreatedBy,
-                GETDATE() AS CreatedDate
-              FROM [{_tempTableName}] t
-              LEFT JOIN [ExpositionSets] s ON t.ExpositionSectionName = s.Name
-              OUTER APPLY (
-                  SELECT 
-                      l1.Id AS OrganizationLevelId,
-                      l1.Name AS DistrictName,
-                      l2.Name AS WorkplaceName
-                  FROM OrganizationLevels l1
-                  JOIN OrganizationLevels l2 ON l1.ParentId = l2.Id
-                  WHERE 
-                      l1.Name = t.District AND l1.Level = 'district' AND
-                      l2.Name = t.Workplace AND l1.ParentId = l2.Id AND l2.Level = 'workplace'
-              ) ol;
+              INSERT INTO \"Locations\" (
+                              \"Name\", \"ObjectNumber\", \"RoomNumber\", \"AvailableForVisitors\",
+                              \"LocationTypeCode\", \"Note\", \"OrganizationLevelId\", \"ExpositionSetId\", \"ModifiedBy\", \"ModifiedAt\")
+              SELECT
+                t.\"Name\",
+                t.\"ObjectNumber\",
+                t.\"RoomNumber\",
+                t.\"AvailableForVisitors\",
+                t.\"LocationTypeCode\",
+                t.\"Note\",
+                ol.\"OrganizationLevelId\",
+                s.\"Id\" AS \"ExpositionSetId\",
+                'system' AS \"CreatedBy\",
+                NOW() AS \"CreatedDate\"
+              FROM \"{_tempTableName}\" t
+              LEFT JOIN \"ExpositionSets\" s ON t.\"ExpositionSectionName\" = s.\"Name\"
+              LEFT JOIN LATERAL (
+                  SELECT
+                      l1.\"Id\" AS \"OrganizationLevelId\",
+                      l1.\"Name\" AS \"DistrictName\",
+                      l2.\"Name\" AS \"WorkplaceName\"
+                  FROM \"OrganizationLevels\" l1
+                  JOIN \"OrganizationLevels\" l2 ON l1.\"ParentId\" = l2.\"Id\"
+                  WHERE
+                      l1.\"Name\" = t.\"District\" AND l1.\"Level\" = 'district' AND
+                      l2.\"Name\" = t.\"Workplace\" AND l1.\"ParentId\" = l2.\"Id\" AND l2.\"Level\" = 'workplace'
+              ) ol ON true;
               ", transaction: transaction, commandTimeout: 0);
 
-            await connection.ExecuteAsync($"DROP TABLE IF EXISTS [dbo].[{_tempTableName}];", transaction: transaction);
+            await connection.ExecuteAsync($"DROP TABLE IF EXISTS \"{_tempTableName}\";", transaction: transaction);
 
             transaction.Commit();
 
@@ -151,48 +151,62 @@ namespace Pzi.Data.Import.Services
       }
     }
 
-    private async Task BulkInsertStagingTableAsync(IEnumerable<LocationCsvRow> data, SqlConnection connection, SqlTransaction transaction)
+    private async Task BulkInsertStagingTableAsync(IEnumerable<LocationCsvRow> data, NpgsqlConnection connection, NpgsqlTransaction transaction)
     {
-      using var bulkCopy = new SqlBulkCopy(connection, SqlBulkCopyOptions.TableLock, transaction);
-      bulkCopy.DestinationTableName = _tempTableName;
-      bulkCopy.BatchSize = 5000;
-      bulkCopy.BulkCopyTimeout = 0;
+      // Use PostgreSQL COPY command for bulk insert
+      var copyCommand = $"COPY \"{_tempTableName}\" (\"ExpositionAreaName\", \"ExpositionSectionName\", \"Name\", \"ObjectNumber\", \"RoomNumber\", \"AvailableForVisitors\", \"LocationTypeCode\", \"Note\", \"District\", \"Workplace\", \"Department\") FROM STDIN WITH (FORMAT CSV)";
 
-      using var dataToImport = data.ToDataTable();
+      await using var writer = await connection.BeginTextImportAsync(copyCommand);
 
-      // NOTE: Bulk copy behavior is unpredictable (e.g. identity insert, typo..) so we will rather map columns manually.
-      bulkCopy.ColumnMappings.Add("ExpositionAreaName", "ExpositionAreaName");
-      bulkCopy.ColumnMappings.Add("ExpositionSectionName", "ExpositionSectionName");
-      bulkCopy.ColumnMappings.Add("Name", "Name");
-      bulkCopy.ColumnMappings.Add("ObjectNumber", "ObjectNumber");
-      bulkCopy.ColumnMappings.Add("RoomNumber", "RoomNumber");
-      bulkCopy.ColumnMappings.Add("AvailableForVisitors", "AvailableForVisitors");
-      bulkCopy.ColumnMappings.Add("LocationTypeCode", "LocationTypeCode");
-      bulkCopy.ColumnMappings.Add("Note", "Note");
-      bulkCopy.ColumnMappings.Add("District", "District");
-      bulkCopy.ColumnMappings.Add("Workplace", "Workplace");
-      bulkCopy.ColumnMappings.Add("Department", "Department");
+      foreach (var row in data)
+      {
+        var values = new List<string>
+        {
+          EscapeCsvValue(row.ExpositionAreaName),
+          EscapeCsvValue(row.ExpositionSectionName),
+          EscapeCsvValue(row.Name),
+          EscapeCsvValue(row.ObjectNumber),
+          EscapeCsvValue(row.RoomNumber),
+          row.AvailableForVisitors ? "true" : "false",
+          row.LocationTypeCode.ToString(),
+          EscapeCsvValue(row.Note),
+          EscapeCsvValue(row.District),
+          EscapeCsvValue(row.Workplace),
+          EscapeCsvValue(row.Department)
+        };
 
-      await bulkCopy.WriteToServerAsync(dataToImport);
+        await writer.WriteLineAsync(string.Join(",", values));
+      }
+
+      await writer.FlushAsync();
     }
 
-    private static async Task CreateTempTableAsync(SqlConnection connection, SqlTransaction transaction)
+    private static string EscapeCsvValue(string? value)
+    {
+      if (string.IsNullOrEmpty(value))
+        return "";
+
+      // Escape quotes by doubling them and wrap in quotes
+      return $"\"{value.Replace("\"", "\"\"")}\"";
+    }
+
+    private static async Task CreateTempTableAsync(NpgsqlConnection connection, NpgsqlTransaction transaction)
     {
       var sql = @$"
-           DROP TABLE IF EXISTS [dbo].[{_tempTableName}];
+           DROP TABLE IF EXISTS \"{_tempTableName}\";
 
-           CREATE TABLE [{_tempTableName}] (
-              ExpositionAreaName NVARCHAR(255),
-              ExpositionSectionName NVARCHAR(255),
-              Name NVARCHAR(255),
-              ObjectNumber NVARCHAR(50),
-              RoomNumber NVARCHAR(50),
-              AvailableForVisitors BIT,
-              LocationTypeCode INT,
-              Note NVARCHAR(MAX),
-              District NVARCHAR(255),
-              Workplace NVARCHAR(255),
-              Department NVARCHAR(255)
+           CREATE TEMP TABLE \"{_tempTableName}\" (
+              \"ExpositionAreaName\" TEXT,
+              \"ExpositionSectionName\" TEXT,
+              \"Name\" TEXT,
+              \"ObjectNumber\" VARCHAR(50),
+              \"RoomNumber\" VARCHAR(50),
+              \"AvailableForVisitors\" BOOLEAN,
+              \"LocationTypeCode\" INTEGER,
+              \"Note\" TEXT,
+              \"District\" TEXT,
+              \"Workplace\" TEXT,
+              \"Department\" TEXT
           );";
 
       await connection.ExecuteAsync(sql, transaction: transaction);
