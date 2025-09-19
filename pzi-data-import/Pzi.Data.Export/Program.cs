@@ -1,5 +1,5 @@
 ﻿using Dapper;
-using Microsoft.Data.SqlClient;
+using Npgsql;
 using Pzi.Data.Export.Services;
 using System.Data;
 using System.Diagnostics;
@@ -25,7 +25,7 @@ class Program
       return;
     }
 
-    Console.WriteLine("Enter the connection string for the MSSQL database:");
+    Console.WriteLine("Enter the connection string for the PostgreSQL database:");
     string? sqlServerConnectionString = Console.ReadLine();
     if (string.IsNullOrWhiteSpace(sqlServerConnectionString))
     {
@@ -84,7 +84,7 @@ class Program
 
             EXEC sp_executesql @sql;";
 
-    await using var sqlConnection = new SqlConnection(sqlServerConnectionString);
+    await using var sqlConnection = new NpgsqlConnection(sqlServerConnectionString);
     await sqlConnection.OpenAsync();
     await sqlConnection.ExecuteAsync(sql);
 
@@ -100,7 +100,7 @@ class Program
     var targetSchema = sourceReader.SchemaName;
     using var data = await sourceReader.LoadDataAsync(tableName);
 
-    await using var sqlConnection = new SqlConnection(sqlServerConnectionString);
+    await using var sqlConnection = new NpgsqlConnection(sqlServerConnectionString);
     await sqlConnection.OpenAsync();
 
     sw.Stop();
@@ -114,7 +114,7 @@ class Program
     Console.WriteLine($"Table [{tableName}] processed. ({sw.Elapsed})");
   }
 
-  static async Task CreateSqlTableIfNotExistsAsync(SqlConnection sqlConnection, string schema, string tableName, DataTable data)
+  static async Task CreateSqlTableIfNotExistsAsync(NpgsqlConnection sqlConnection, string schema, string tableName, DataTable data)
   {
     var createTableCommand = $"CREATE TABLE [{schema}].[{tableName}] (";
 
@@ -143,7 +143,7 @@ class Program
     };
   }
 
-  static async Task InsertDataIntoSqlAsync(SqlConnection connection, string schema, string tableName, DataTable data)
+  static async Task InsertDataIntoSqlAsync(NpgsqlConnection connection, string schema, string tableName, DataTable data)
   {
     if (data == null || data.Rows.Count == 0)
     {
@@ -181,7 +181,7 @@ class Program
   }
 
 
-  static async Task InsertDataIntoSqlAsync_old(SqlConnection sqlConnection, string schema, string tableName, DataTable data)
+  static async Task InsertDataIntoSqlAsync_old(NpgsqlConnection sqlConnection, string schema, string tableName, DataTable data)
   {
     foreach (DataRow row in data.Rows)
     {

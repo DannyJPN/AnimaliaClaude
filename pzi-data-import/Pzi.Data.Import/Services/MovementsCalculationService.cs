@@ -1,5 +1,5 @@
 ﻿using Dapper;
-using Microsoft.Data.SqlClient;
+using Npgsql;
 using Pzi.Data.Import.Services.Entities;
 
 namespace Pzi.Data.Import.Services
@@ -27,7 +27,7 @@ namespace Pzi.Data.Import.Services
 
     public async Task FixPlacementsNotInZoo()
     {
-      using (var connection = new SqlConnection(_connectionString))
+      using (var connection = new NpgsqlConnection(_connectionString))
       {
         await connection.OpenAsync();
         using (var transaction = connection.BeginTransaction())
@@ -57,7 +57,7 @@ namespace Pzi.Data.Import.Services
 
     private async Task<Dictionary<int, List<Movement>>> LoadMovementsAsync()
     {
-      using var connection = new SqlConnection(_connectionString);
+      using var connection = new NpgsqlConnection(_connectionString);
       await connection.OpenAsync();
 
       var movements = (await connection.QueryAsync<Movement>(@"SELECT SpecimenId, Date, Quantity, QuantityActual, IncrementReason AS IncrementReasonCode, DecrementReason AS DecrementReasonCode FROM [dbo].[Movements] WITH (NOLOCK);", commandTimeout: 0)).ToList();
@@ -72,7 +72,7 @@ namespace Pzi.Data.Import.Services
 
     private async Task ProcessSpecimenDataAsync(List<SpecimenCalculationResult> calculatedData)
     {
-      using (var connection = new SqlConnection(_connectionString))
+      using (var connection = new NpgsqlConnection(_connectionString))
       {
         await connection.OpenAsync();
         using (var transaction = connection.BeginTransaction())

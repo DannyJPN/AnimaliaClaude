@@ -1,7 +1,7 @@
 ﻿using CsvHelper;
 using CsvHelper.Configuration;
 using Dapper;
-using Microsoft.Data.SqlClient;
+using Npgsql;
 using Pzi.Data.Import.Services.Entities;
 using System.Globalization;
 
@@ -94,7 +94,7 @@ namespace Pzi.Data.Import.Services
 
     private async Task ProcessSpecimenDataAsync(List<LocationCsvRow> calculatedData)
     {
-      using (var connection = new SqlConnection(_connectionString))
+      using (var connection = new NpgsqlConnection(_connectionString))
       {
         await connection.OpenAsync();
         using (var transaction = connection.BeginTransaction())
