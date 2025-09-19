@@ -331,15 +331,17 @@ public class SuperAdminTenantService : ISuperAdminTenantService
     {
         try
         {
-            // Get usage statistics from various tenant entities
-            // Note: These queries use the tenant-filtered context but we need global access for superadmin
+            // Get usage statistics using raw SQL for cross-tenant queries to avoid global query filter issues
+            // This ensures proper security while allowing SuperAdmin to access tenant-specific usage data
 
-            // Temporarily disable global query filters for this operation
-            using var tempContext = new PziDbContext(_dbContext.Database.GetDbConnection().ConnectionString);
+            var userCount = await _dbContext.Database.SqlQueryRaw<int>(
+                "SELECT COUNT(*) FROM \"Users\" WHERE \"TenantId\" = {0}", tenantId).FirstAsync();
 
-            var userCount = await tempContext.Users.CountAsync(); // Would need to filter by tenant manually
-            var speciesCount = await tempContext.Species.Where(s => s.TenantId == tenantId).CountAsync();
-            var specimenCount = await tempContext.Specimens.Where(s => s.TenantId == tenantId).CountAsync();
+            var speciesCount = await _dbContext.Database.SqlQueryRaw<int>(
+                "SELECT COUNT(*) FROM \"Species\" WHERE \"TenantId\" = {0}", tenantId).FirstAsync();
+
+            var specimenCount = await _dbContext.Database.SqlQueryRaw<int>(
+                "SELECT COUNT(*) FROM \"Specimens\" WHERE \"TenantId\" = {0}", tenantId).FirstAsync();
 
             var tenant = await _dbContext.Tenants.FirstOrDefaultAsync(t => t.Id == tenantId);
             var config = tenant?.GetConfiguration();

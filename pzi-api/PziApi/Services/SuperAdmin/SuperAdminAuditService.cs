@@ -25,7 +25,8 @@ public class SuperAdminAuditService : ISuperAdminAuditService
         _dbContext = dbContext;
         _logger = logger;
         _httpContextAccessor = httpContextAccessor;
-        _integritySecret = configuration["SuperAdmin:AuditIntegritySecret"] ?? "default-secret-change-in-production";
+        _integritySecret = configuration["SuperAdmin:AuditIntegritySecret"]
+            ?? throw new InvalidOperationException("SuperAdmin:AuditIntegritySecret must be configured in application settings for security compliance");
     }
 
     public async Task LogOperationAsync(
