@@ -5,6 +5,7 @@ import { decodeTableParametersFromRequest } from "~/lib/table-params-encoder-dec
 import { TableSettings } from "~/shared/models";
 import { fetchTableSettings } from './table-settings';
 import { getUserName } from './user-session';
+import { getXlsFileTimestamp } from "~/utils/date-utils";
 
 export function prepareXlsColumnDefinition(
   columnDef: { accessorKey?: string, header: string }[],
@@ -121,10 +122,13 @@ export async function exportToXls<TItem extends MRT_RowData>(
 
   const xlsxBuffer = await workBook.xlsx.writeBuffer();
 
+  const timestamp = getXlsFileTimestamp();
+  const fileName = `${exportName}_${timestamp}`;
+
   return new Response(xlsxBuffer, {
     status: 200,
     headers: {
-      "Content-Disposition": `inline;filename=${exportName}.xlsx`,
+      "Content-Disposition": `inline;filename=${fileName}.xlsx`,
       "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     },
   });

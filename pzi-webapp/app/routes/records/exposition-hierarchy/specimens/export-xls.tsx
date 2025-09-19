@@ -27,6 +27,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     columnDef,
     columnDefVisibility,
     SPECIMENS_TABLE_ID,
-    "export-exemplare"
+    "exemplare"
   );
 }

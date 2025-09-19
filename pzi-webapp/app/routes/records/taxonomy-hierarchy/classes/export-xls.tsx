@@ -11,5 +11,5 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     `taxonomyclasses?$count=true&$orderby=code&$filter=taxonomyPhylumId eq ${phylumId}`
   );
 
-  return exportToXls(request, listResult!.items, columnDef, defaultVisibility, TABLE_ID, 'export-tridy');
+  return exportToXls(request, listResult!.items, columnDef, defaultVisibility, TABLE_ID, 'tridy');
 }

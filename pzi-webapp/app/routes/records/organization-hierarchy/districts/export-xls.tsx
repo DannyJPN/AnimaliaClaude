@@ -24,6 +24,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     columnDef,
     defaultVisibility,
     DISTRICTS_TABLE_ID,
-    "export-useky"
+    "useky"
   );
 }

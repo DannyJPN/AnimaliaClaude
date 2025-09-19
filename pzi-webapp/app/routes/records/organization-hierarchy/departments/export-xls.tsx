@@ -22,6 +22,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
     columnDef,
     defaultVisibility,
     DEPARTMENTS_TABLE_ID,
-    "export-oddeleni"
+    "oddeleni"
   );
 }

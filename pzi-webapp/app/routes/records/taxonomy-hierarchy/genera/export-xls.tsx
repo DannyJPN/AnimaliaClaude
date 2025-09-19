@@ -11,5 +11,5 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     `taxonomygenera?$count=true&$orderby=code&$filter=taxonomyFamilyId eq ${parentId}`
   );
 
-  return exportToXls(request, listResult!.items, columnDef, defaultVisibility, TABLE_ID, 'export-rody');
+  return exportToXls(request, listResult!.items, columnDef, defaultVisibility, TABLE_ID, 'rody');
 }

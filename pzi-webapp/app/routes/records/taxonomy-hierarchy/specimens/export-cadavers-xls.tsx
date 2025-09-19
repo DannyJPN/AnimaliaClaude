@@ -13,5 +13,5 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const itemsWithRelatedData = (listResult?.items || []).map(flattenCadaver);
 
-  return exportToXls(request, itemsWithRelatedData, cadaversColumnDef, cadaversColumnDefVisibility, SPECIMEN_CADAVERS_TABLE_ID, 'export-kadaver');
+  return exportToXls(request, itemsWithRelatedData, cadaversColumnDef, cadaversColumnDefVisibility, SPECIMEN_CADAVERS_TABLE_ID, 'kadavery');
 }

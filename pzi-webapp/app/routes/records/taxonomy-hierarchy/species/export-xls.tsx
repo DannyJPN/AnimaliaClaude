@@ -13,5 +13,5 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const itemsWithRelatedData: TaxonomySpeciesItem[] = (listResult?.items || []).map(x => x);
 
-  return exportToXls(request, itemsWithRelatedData, columnDef, columnDefVisibility, TABLE_ID, 'export-druhy');
+  return exportToXls(request, itemsWithRelatedData, columnDef, columnDefVisibility, TABLE_ID, 'druhy');
 }

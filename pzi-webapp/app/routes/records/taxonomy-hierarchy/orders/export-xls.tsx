@@ -11,5 +11,5 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     `TaxonomyOrders?$count=true&$orderby=code&$filter=taxonomyClassId eq ${classId}`
   );
 
-  return exportToXls(request, listResult!.items, columnDef, defaultVisibility, TABLE_ID, 'export-rady');
+  return exportToXls(request, listResult!.items, columnDef, defaultVisibility, TABLE_ID, 'rady');
 }

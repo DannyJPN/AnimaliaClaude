@@ -14,5 +14,5 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const movementsWithRelatedData = (listResult?.items || []).map(flattenODataMovementsResult);
 
-  return exportToXls(request, movementsWithRelatedData, movementsColumnDef, movementsColumnDefVisibility, SPECIMEN_MOVEMENTS_TABLE_ID, 'export-pohyby');
+  return exportToXls(request, movementsWithRelatedData, movementsColumnDef, movementsColumnDefVisibility, SPECIMEN_MOVEMENTS_TABLE_ID, 'pohyby');
 }

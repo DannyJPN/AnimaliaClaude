@@ -13,5 +13,5 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const itemsWithRelatedData = (listResult?.items || []).map(flattenMarking);
 
-  return exportToXls(request, itemsWithRelatedData, markingsColumnDef, markingsColumnDefVisibility, SPECIMEN_MARKINGS_TABLE_ID, 'export-znaceni');
+  return exportToXls(request, itemsWithRelatedData, markingsColumnDef, markingsColumnDefVisibility, SPECIMEN_MARKINGS_TABLE_ID, 'znaceni');
 }

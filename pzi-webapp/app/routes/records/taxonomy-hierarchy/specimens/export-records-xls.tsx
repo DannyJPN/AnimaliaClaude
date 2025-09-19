@@ -13,5 +13,5 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const itemsWithRelatedData = (listResult?.items || []).map(flattenRecord);
 
-  return exportToXls(request, itemsWithRelatedData, recordsColumnDef, recordsColumnDefVisibility, SPECIMEN_RECORDS_TABLE_ID, 'export-zaznamy');
+  return exportToXls(request, itemsWithRelatedData, recordsColumnDef, recordsColumnDefVisibility, SPECIMEN_RECORDS_TABLE_ID, 'zaznamy');
 }
