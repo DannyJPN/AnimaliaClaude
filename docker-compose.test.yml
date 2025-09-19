@@ -1,0 +1,117 @@
+version: '3.8'
+
+services:
+  # Test Database
+  postgres-test:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: pzi_test
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: test_password
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_test_data:/var/lib/postgresql/data
+      - ./database/new-schema/db/migrations:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d pzi_test"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Test API
+  api-test:
+    build:
+      context: ./pzi-api
+      dockerfile: Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Testing
+      - ConnectionStrings__DefaultConnection=Host=postgres-test;Database=pzi_test;Username=postgres;Password=test_password
+      - JWT__Secret=test-secret-key-for-testing-only
+      - Auth0__Domain=test.auth0.com
+      - Auth0__Audience=test-api
+    ports:
+      - "8081:8080"
+    depends_on:
+      postgres-test:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Test WebApp
+  webapp-test:
+    build:
+      context: ./pzi-webapp
+      dockerfile: Dockerfile
+      args:
+        - NODE_ENV=test
+    environment:
+      - NODE_ENV=test
+      - API_BASE_URL=http://api-test:8080
+      - AUTH0_DOMAIN=test.auth0.com
+      - AUTH0_CLIENT_ID=test-client-id
+      - AUTH0_AUDIENCE=test-api
+    ports:
+      - "3001:3000"
+    depends_on:
+      api-test:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Test Login Service
+  login-test:
+    build:
+      context: ./pzi-login
+      dockerfile: Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Testing
+      - ConnectionStrings__DefaultConnection=Host=postgres-test;Database=pzi_test;Username=postgres;Password=test_password
+      - Auth0__Domain=test.auth0.com
+      - Auth0__ClientId=test-client-id
+      - Auth0__ClientSecret=test-client-secret
+    ports:
+      - "5001:5000"
+    depends_on:
+      postgres-test:
+        condition: service_healthy
+
+  # Mock Auth0 Service for Testing
+  mock-auth0:
+    image: mockserver/mockserver:latest
+    ports:
+      - "1080:1080"
+    environment:
+      MOCKSERVER_INITIALIZATION_JSON_PATH: /config/auth0-mock.json
+    volumes:
+      - ./test-config/auth0-mock.json:/config/auth0-mock.json
+
+  # Redis for Caching (if needed)
+  redis-test:
+    image: redis:7-alpine
+    ports:
+      - "6380:6379"
+    command: redis-server --requirepass test_password
+
+  # Test Data Seeder
+  test-data-seeder:
+    build:
+      context: ./test-utils
+      dockerfile: Dockerfile
+    environment:
+      - DATABASE_URL=postgresql://postgres:test_password@postgres-test:5432/pzi_test
+      - API_URL=http://api-test:8080
+    depends_on:
+      api-test:
+        condition: service_healthy
+    volumes:
+      - ./test-data:/data
+
+volumes:
+  postgres_test_data:

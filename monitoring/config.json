@@ -1,0 +1,77 @@
+{
+  "webApp": {
+    "url": "http://localhost:3000",
+    "healthEndpoint": "/health"
+  },
+  "api": {
+    "url": "http://localhost:8080",
+    "healthEndpoint": "/api/health"
+  },
+  "loginService": {
+    "url": "http://localhost:5000",
+    "healthEndpoint": "/health"
+  },
+  "database": {
+    "host": "localhost",
+    "port": 5432,
+    "name": "pzi",
+    "user": "postgres",
+    "password": "Xserver@101"
+  },
+  "auth0": {
+    "domain": "your-auth0-domain.auth0.com",
+    "audience": "your-api-audience"
+  },
+  "externalServices": [
+    {
+      "name": "auth0",
+      "url": "https://your-auth0-domain.auth0.com/api/v2/"
+    }
+  ],
+  "thresholds": {
+    "responseTime": 5000,
+    "errorRate": 0.01,
+    "dbConnectionTime": 1000,
+    "cpuUsage": 80,
+    "memoryUsage": 85,
+    "diskUsage": 90
+  },
+  "alerting": {
+    "enabled": true,
+    "webhooks": [
+      {
+        "name": "slack",
+        "url": "https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK",
+        "enabled": false
+      }
+    ],
+    "email": {
+      "enabled": false,
+      "smtp": {
+        "host": "smtp.gmail.com",
+        "port": 587,
+        "secure": false,
+        "auth": {
+          "user": "your-email@example.com",
+          "pass": "your-password"
+        }
+      },
+      "recipients": ["admin@example.com"]
+    }
+  },
+  "monitoring": {
+    "interval": 60000,
+    "retries": 3,
+    "timeout": 10000,
+    "metrics": {
+      "retention": "30d",
+      "aggregation": "5m"
+    }
+  },
+  "reports": {
+    "directory": "monitoring/reports",
+    "format": "json",
+    "archive": true,
+    "retention": "90d"
+  }
+}
