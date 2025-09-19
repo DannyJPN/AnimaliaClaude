@@ -1,0 +1,87 @@
+{
+  "httpRequest": {
+    "method": "GET",
+    "path": "/.well-known/jwks.json"
+  },
+  "httpResponse": {
+    "statusCode": 200,
+    "headers": {
+      "Content-Type": ["application/json"]
+    },
+    "body": {
+      "keys": [
+        {
+          "kty": "RSA",
+          "use": "sig",
+          "kid": "test-key-id",
+          "x5t": "test-thumb",
+          "n": "0vx7agoebGcQSuuPiLJXZptN9nndrQmbPFRP_gdHPfLN0f6P0_M5B6v8K-bt_A",
+          "e": "AQAB",
+          "x5c": [
+            "MIIC5TCCAc2gAwIBAgIJAKK4iNvQjWXfMA0GCSqGSIb3DQEBCwUAMCExHzAdBgNVBAMTFnRlc3QuYXV0aDAuY29tLmF1dGgwLmNvbTAeFw0yMzAxMDEwMDAwMDBaFw0zMjEyMzEyMzU5NTlaMCExHzAdBgNVBAMTFnRlc3QuYXV0aDAuY29tLmF1dGgwLmNvbTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAL9a"
+          ]
+        }
+      ]
+    }
+  }
+},
+{
+  "httpRequest": {
+    "method": "GET",
+    "path": "/.well-known/openid-configuration"
+  },
+  "httpResponse": {
+    "statusCode": 200,
+    "headers": {
+      "Content-Type": ["application/json"]
+    },
+    "body": {
+      "issuer": "https://test.auth0.com",
+      "authorization_endpoint": "https://test.auth0.com/authorize",
+      "token_endpoint": "https://test.auth0.com/oauth/token",
+      "userinfo_endpoint": "https://test.auth0.com/userinfo",
+      "jwks_uri": "http://localhost:1080/.well-known/jwks.json",
+      "scopes_supported": ["openid", "profile", "email"],
+      "response_types_supported": ["code", "token", "id_token"],
+      "token_endpoint_auth_methods_supported": ["client_secret_basic", "client_secret_post"]
+    }
+  }
+},
+{
+  "httpRequest": {
+    "method": "POST",
+    "path": "/oauth/token"
+  },
+  "httpResponse": {
+    "statusCode": 200,
+    "headers": {
+      "Content-Type": ["application/json"]
+    },
+    "body": {
+      "access_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6InRlc3Qta2V5LWlkIn0.eyJpc3MiOiJodHRwczovL3Rlc3QuYXV0aDAuY29tIiwic3ViIjoidGVzdC11c2VyLWlkIiwiYXVkIjoidGVzdC1hcGkiLCJpYXQiOjE2NzMwMDAwMDAsImV4cCI6MTY3MzAwMzYwMCwic2NvcGUiOiJyZWFkOmFsbCB3cml0ZTphbGwiLCJhenAiOiJ0ZXN0LWNsaWVudC1pZCJ9",
+      "token_type": "Bearer",
+      "expires_in": 3600,
+      "scope": "read:all write:all"
+    }
+  }
+},
+{
+  "httpRequest": {
+    "method": "GET",
+    "path": "/userinfo"
+  },
+  "httpResponse": {
+    "statusCode": 200,
+    "headers": {
+      "Content-Type": ["application/json"]
+    },
+    "body": {
+      "sub": "test-user-id",
+      "name": "Test User",
+      "email": "test@example.com",
+      "email_verified": true,
+      "picture": "https://example.com/avatar.jpg",
+      "nickname": "testuser"
+    }
+  }
+}

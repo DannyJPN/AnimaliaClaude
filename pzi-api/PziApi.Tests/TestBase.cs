@@ -5,6 +5,8 @@ using Microsoft.EntityFrameworkCore;
 using DotNet.Testcontainers.Builders;
 using DotNet.Testcontainers.Containers;
 using Testcontainers.PostgreSql;
+using PziApi.CrossCutting.Database;
+using PziApi.CrossCutting.Tenant;
 
 namespace PziApi.Tests;
 
@@ -30,12 +32,21 @@ public abstract class TestBase : IAsyncLifetime
                 {
                     // Remove the app's DbContext registration
                     var descriptor = services.SingleOrDefault(
-                        d => d.ServiceType == typeof(DbContextOptions<ApplicationDbContext>));
+                        d => d.ServiceType == typeof(DbContextOptions<PziDbContext>));
                     if (descriptor != null)
                         services.Remove(descriptor);
 
+                    // Remove tenant context for testing
+                    var tenantDescriptor = services.SingleOrDefault(
+                        d => d.ServiceType == typeof(ITenantContext));
+                    if (tenantDescriptor != null)
+                        services.Remove(tenantDescriptor);
+
+                    // Add test tenant context
+                    services.AddScoped<ITenantContext, TestTenantContext>();
+
                     // Add DbContext using test database
-                    services.AddDbContext<ApplicationDbContext>(options =>
+                    services.AddDbContext<PziDbContext>(options =>
                     {
                         options.UseNpgsql(PostgresContainer.GetConnectionString());
                     });
@@ -50,7 +61,7 @@ public abstract class TestBase : IAsyncLifetime
         await PostgresContainer.StartAsync();
 
         using var scope = Factory.Services.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var context = scope.ServiceProvider.GetRequiredService<PziDbContext>();
         await context.Database.EnsureCreatedAsync();
     }
 
@@ -62,11 +73,19 @@ public abstract class TestBase : IAsyncLifetime
     }
 }
 
-public class ApplicationDbContext : DbContext
+/// <summary>
+/// Test implementation of tenant context for testing multi-tenant scenarios
+/// </summary>
+public class TestTenantContext : ITenantContext
 {
-    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
-    {
-    }
+    public string CurrentTenantId { get; set; } = "test-tenant";
+    public string? CurrentUserId { get; set; } = "test-user";
+    public bool IsInitialized { get; set; } = true;
 
-    // Add DbSets here when they exist in the actual application
+    public void SetTenant(string tenantId, string? userId = null)
+    {
+        CurrentTenantId = tenantId;
+        CurrentUserId = userId;
+        IsInitialized = true;
+    }
 }

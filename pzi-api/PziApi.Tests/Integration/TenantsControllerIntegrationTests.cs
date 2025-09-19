@@ -5,6 +5,7 @@ using System.Net;
 using System.Text.Json;
 using System.Net.Http.Headers;
 using Microsoft.EntityFrameworkCore;
+using PziApi.CrossCutting.Database;
 
 namespace PziApi.Tests.Integration;
 
@@ -163,7 +164,7 @@ public class TenantsControllerIntegrationTests : TestBase
     private async Task<int> SeedTestTenant(string name)
     {
         using var scope = Factory.Services.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var context = scope.ServiceProvider.GetRequiredService<PziDbContext>();
 
         // Add tenant to database
         // This is a placeholder - implement based on actual tenant model
@@ -178,7 +179,7 @@ public class TenantsControllerIntegrationTests : TestBase
     private async Task SeedTestRecord(int tenantId, string recordName)
     {
         using var scope = Factory.Services.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var context = scope.ServiceProvider.GetRequiredService<PziDbContext>();
 
         // Add record associated with tenant
         // This is a placeholder - implement based on actual models

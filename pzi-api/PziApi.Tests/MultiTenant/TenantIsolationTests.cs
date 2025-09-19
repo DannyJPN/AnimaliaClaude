@@ -3,6 +3,7 @@ using FluentAssertions;
 using System.Net.Http.Headers;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using PziApi.CrossCutting.Database;
 
 namespace PziApi.Tests.MultiTenant;
 
@@ -14,7 +15,7 @@ public class TenantIsolationTests : TestBase
     {
         // Arrange
         using var scope = Factory.Services.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var context = scope.ServiceProvider.GetRequiredService<PziDbContext>();
 
         var tenant1Id = await CreateTestTenant(context, "Tenant 1");
         var tenant2Id = await CreateTestTenant(context, "Tenant 2");
@@ -40,7 +41,7 @@ public class TenantIsolationTests : TestBase
     {
         // Arrange
         using var scope = Factory.Services.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var context = scope.ServiceProvider.GetRequiredService<PziDbContext>();
 
         var tenant1Id = await CreateTestTenant(context, "Tenant 1");
         var tenant2Id = await CreateTestTenant(context, "Tenant 2");
@@ -65,7 +66,7 @@ public class TenantIsolationTests : TestBase
     {
         // Arrange
         using var scope = Factory.Services.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var context = scope.ServiceProvider.GetRequiredService<PziDbContext>();
 
         var tenant1Id = await CreateTestTenant(context, "Tenant 1");
         var tenant2Id = await CreateTestTenant(context, "Tenant 2");
@@ -88,7 +89,7 @@ public class TenantIsolationTests : TestBase
     {
         // Arrange
         using var scope = Factory.Services.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var context = scope.ServiceProvider.GetRequiredService<PziDbContext>();
 
         var tenant1Id = await CreateTestTenant(context, "Tenant 1");
         var tenant2Id = await CreateTestTenant(context, "Tenant 2");
@@ -113,7 +114,7 @@ public class TenantIsolationTests : TestBase
     {
         // Arrange
         using var scope = Factory.Services.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var context = scope.ServiceProvider.GetRequiredService<PziDbContext>();
 
         var tenant1Id = await CreateTestTenant(context, "Tenant 1");
         var tenant2Id = await CreateTestTenant(context, "Tenant 2");
@@ -160,7 +161,7 @@ public class TenantIsolationTests : TestBase
     {
         // Arrange
         using var scope = Factory.Services.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var context = scope.ServiceProvider.GetRequiredService<PziDbContext>();
 
         var tenant1Id = await CreateTestTenant(context, "Tenant 1");
         var tenant2Id = await CreateTestTenant(context, "Tenant 2");
@@ -182,7 +183,7 @@ public class TenantIsolationTests : TestBase
     {
         // Arrange
         using var scope = Factory.Services.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var context = scope.ServiceProvider.GetRequiredService<PziDbContext>();
 
         var tenant1Id = await CreateTestTenant(context, "Tenant 1");
         var tenant2Id = await CreateTestTenant(context, "Tenant 2");
@@ -216,7 +217,7 @@ public class TenantIsolationTests : TestBase
     {
         // Arrange
         using var scope = Factory.Services.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var context = scope.ServiceProvider.GetRequiredService<PziDbContext>();
 
         var tenant1Id = await CreateTestTenant(context, "Tenant 1");
         var tenant2Id = await CreateTestTenant(context, "Tenant 2");
@@ -239,27 +240,27 @@ public class TenantIsolationTests : TestBase
     }
 
     // Helper methods
-    private async Task<int> CreateTestTenant(ApplicationDbContext context, string name)
+    private async Task<int> CreateTestTenant(PziDbContext context, string name)
     {
         // Mock implementation - replace with actual tenant entity
         await Task.Delay(1);
         return 1;
     }
 
-    private async Task<int> CreateTestUser(ApplicationDbContext context, int tenantId, string email)
+    private async Task<int> CreateTestUser(PziDbContext context, int tenantId, string email)
     {
         // Mock implementation - replace with actual user entity
         await Task.Delay(1);
         return 1;
     }
 
-    private async Task CreateTestRecord(ApplicationDbContext context, int tenantId, string name)
+    private async Task CreateTestRecord(PziDbContext context, int tenantId, string name)
     {
         // Mock implementation - replace with actual record entity
         await Task.Delay(1);
     }
 
-    private async Task<List<dynamic>> GetTenantRecords(ApplicationDbContext context, int tenantId)
+    private async Task<List<dynamic>> GetTenantRecords(PziDbContext context, int tenantId)
     {
         // Mock implementation - replace with actual query
         await Task.Delay(1);
