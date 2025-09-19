@@ -91,12 +91,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const [wb] = await renderPrintExport(templateBlocks, dataBlocks);
   const xlsxBuffer = await wb.xlsx.writeBuffer();
 
-  const fileName = `gw_ARKS_${getXlsFileTimestamp()}`;
+  const fileName = `seznam-exemplaru-pro-zims_${getXlsFileTimestamp()}.xlsx`;
 
   return new Response(xlsxBuffer, {
     status: 200,
     headers: {
-      "Content-Disposition": `inline;filename=${fileName}.xlsx`,
+      "Content-Disposition": `inline;filename=${fileName}`,
       "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       "Cache-Control": "no-cache"
     },

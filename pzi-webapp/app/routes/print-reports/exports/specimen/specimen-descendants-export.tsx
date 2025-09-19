@@ -141,7 +141,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return new Response(xlsxBuffer, {
     status: 200,
     headers: {
-      "Content-Disposition": `inline;filename=specimen_descendants_${specimenId}_${getXlsFileTimestamp()}.xlsx`,
+      "Content-Disposition": `inline;filename=potomci-exemplare_${specimenId}_${getXlsFileTimestamp()}.xlsx`,
       "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       'Cache-Control': 'no-cache',
     },

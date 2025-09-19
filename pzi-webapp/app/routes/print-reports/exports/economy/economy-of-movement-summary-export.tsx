@@ -264,7 +264,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
     const dateFromFormatted = minDate.replace(/\//g, "");
     const dateToFormatted = maxDate.replace(/\//g, "");
-    const fileName = `w_ucetnisestava_${dateFromFormatted}_${dateToFormatted}_${getXlsFileTimestamp()}.xlsx`;
+    const fileName = `ekonomika-pohybu-podle-trid_${dateFromFormatted}_${dateToFormatted}_${getXlsFileTimestamp()}.xlsx`;
 
     return new Response(xlsxBuffer, {
       status: 200,

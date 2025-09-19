@@ -3,6 +3,7 @@ import { apiCall, processResponse } from "~/.server/api-actions";
 import { BlockData, prepareTemplateBlocks, renderPrintExport } from "~/.server/print-templates/xls-template-exports";
 import { pziConfig } from "~/.server/pzi-config";
 import { requireLoggedInUser } from "~/.server/user-session";
+import { getXlsFileTimestamp } from "~/utils/date-utils";
 
 type SpecimenDto = {
   accessionNumber?: number;
@@ -48,12 +49,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const [wb] = await renderPrintExport(templateBlocks, dataBlocks);
   const xlsxBuffer = await wb.xlsx.writeBuffer();
 
-  const fileName = `gw_arks_${minZims}_${maxZims}`;
+  const fileName = `kompletni-seznam-zims_${minZims}_${maxZims}_${getXlsFileTimestamp()}.xlsx`;
 
   return new Response(xlsxBuffer, {
     status: 200,
     headers: {
-      "Content-Disposition": `inline;filename=${fileName}.xlsx`,
+      "Content-Disposition": `inline;filename=${fileName}`,
       "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     },
   });

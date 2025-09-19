@@ -5,7 +5,7 @@ import { apiCall, processResponse } from "~/.server/api-actions";
 import { BlockData, prepareTemplateBlocks, renderPrintExport } from "~/.server/print-templates/xls-template-exports";
 import { pziConfig } from "~/.server/pzi-config";
 import { requireLoggedInUser } from "~/.server/user-session";
-import { formatToCzechDate } from "~/utils/date-utils";
+import { formatToCzechDate, getXlsFileTimestamp } from "~/utils/date-utils";
 
 export type ExportDataRow = {
     id: number,
@@ -123,7 +123,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     return new Response(xlsxBuffer, {
         status: 200,
         headers: {
-            "Content-Disposition": `inline;filename=speciesinregion-owned.xlsx`,
+            "Content-Disposition": `inline;filename=druhy-v-majetku-rajonu_${getXlsFileTimestamp()}.xlsx`,
             "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         },
     });
