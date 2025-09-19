@@ -20,6 +20,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
     columnDef,
     defaultVisibility,
     AREAS_TABLE_ID,
-    "export-oddeleni"
+    "oddeleni"
   );
 }

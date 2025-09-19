@@ -13,5 +13,5 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const itemsWithRelatedData = (listResult?.items || []).map(flattenDocument);
 
-  return exportToXls(request, itemsWithRelatedData, documentsColumnDef, documentsColumnDefVisibility, SPECIMEN_DOCUMENTS_TABLE_ID, 'export-dokumenty');
+  return exportToXls(request, itemsWithRelatedData, documentsColumnDef, documentsColumnDefVisibility, SPECIMEN_DOCUMENTS_TABLE_ID, 'dokumenty');
 }

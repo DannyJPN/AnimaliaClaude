@@ -17,6 +17,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     columnDef,
     columnDefVisibility,
     LOCATIONS_TABLE_ID,
-    "export-lokace"
+    "lokace"
   );
 }

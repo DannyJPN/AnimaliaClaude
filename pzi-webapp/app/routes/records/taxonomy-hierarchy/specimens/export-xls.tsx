@@ -15,5 +15,5 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const specimensWithRelatedData: TaxonomySpecimenItemWithFlatRelatedData[] = (listResult?.items || []).map(flattenODataResult);
 
-  return exportToXls(request, specimensWithRelatedData, columnDef, columnDefVisibility, SPECIMENS_TABLE_ID, 'export-exemplare');
+  return exportToXls(request, specimensWithRelatedData, columnDef, columnDefVisibility, SPECIMENS_TABLE_ID, 'exemplare');
 }

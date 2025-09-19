@@ -11,5 +11,5 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     `taxonomyfamilies?$count=true&$orderby=code&$filter=taxonomyOrderId eq ${parentId}`
   );
 
-  return exportToXls(request, listResult!.items, columnDef, defaultVisibility, TABLE_ID, 'export-celede');
+  return exportToXls(request, listResult!.items, columnDef, defaultVisibility, TABLE_ID, 'celede');
 }

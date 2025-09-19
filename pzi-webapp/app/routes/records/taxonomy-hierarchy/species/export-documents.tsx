@@ -13,5 +13,5 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const itemsWithRelatedData: TaxonomySpeciesDocumentItemWithFlatRelatedData[] = (listResult?.items || []).map(flattenODataSpeciesDocumentResult);
 
-  return exportToXls(request, itemsWithRelatedData, documentsColumnDef, documentsColumnDefisibility, SPECIES_DOCUMENS_TABLE_ID, 'export-dokumenty-druhu');
+  return exportToXls(request, itemsWithRelatedData, documentsColumnDef, documentsColumnDefisibility, SPECIES_DOCUMENS_TABLE_ID, 'dokumenty-druhu');
 }

@@ -21,6 +21,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     columnDef,
     defaultVisibility,
     SETS_TABLE_ID,
-    "export-soubory"
+    "soubory"
   );
 }

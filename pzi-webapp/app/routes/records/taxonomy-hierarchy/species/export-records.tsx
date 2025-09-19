@@ -13,5 +13,5 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const itemsWithRelatedData: TaxononomySpeciesRecordItem[] = (listResult?.items || []).map(flattenODataSpeciesRecordsResult);
 
-  return exportToXls(request, itemsWithRelatedData, recordsColumnDef, recordsColumnDefVisibility, SPECIES_RECORDS_TABLE_ID, 'export-zaznamy-druhu');
+  return exportToXls(request, itemsWithRelatedData, recordsColumnDef, recordsColumnDefVisibility, SPECIES_RECORDS_TABLE_ID, 'zaznamy-druhu');
 }

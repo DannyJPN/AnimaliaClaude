@@ -9,5 +9,5 @@ export async function loader({ request }: LoaderFunctionArgs) {
     "TaxonomyPhyla?$count=true&$orderby=code"
   );
 
-  return exportToXls(request, listResult!.items, columnDef, defaultVisibility, TABLE_ID, 'export-kmeny');
+  return exportToXls(request, listResult!.items, columnDef, defaultVisibility, TABLE_ID, 'kmeny');
 }

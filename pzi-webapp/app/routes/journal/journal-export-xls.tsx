@@ -33,5 +33,5 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const results = await processResponse<PagedResult<JournalEntry>>(response);
   const items = results.item?.items || [];
 
-  return exportToXls(request, items, columnDef, columnVisibility, TABLE_ID, 'export-denik');
+  return exportToXls(request, items, columnDef, columnVisibility, TABLE_ID, 'denik');
 }

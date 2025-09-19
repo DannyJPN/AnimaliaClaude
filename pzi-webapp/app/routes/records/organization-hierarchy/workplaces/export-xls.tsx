@@ -24,6 +24,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     columnDef,
     defaultVisibility,
     WORKPLACES_TABLE_ID,
-    "export-pracoviste"
+    "pracoviste"
   );
 }

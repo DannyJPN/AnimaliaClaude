@@ -25,6 +25,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     columnDef,
     columnDefVisibility,
     TABLE_ID,
-    "export-druhy"
+    "druhy"
   );
 }
