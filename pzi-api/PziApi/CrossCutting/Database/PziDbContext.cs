@@ -77,6 +77,16 @@ public class PziDbContext : DbContext
   // Tenant management
   public DbSet<Models.Tenant> Tenants { get; set; } = null!;
 
+  // SuperAdmin management
+  public DbSet<Models.SuperAdmin.SuperAdminUser> SuperAdminUsers { get; set; } = null!;
+  public DbSet<Models.SuperAdmin.SuperAdminSession> SuperAdminSessions { get; set; } = null!;
+  public DbSet<Models.SuperAdmin.SuperAdminAuditLog> SuperAdminAuditLogs { get; set; } = null!;
+  public DbSet<Models.SuperAdmin.SuperAdminNotificationConfig> SuperAdminNotificationConfigs { get; set; } = null!;
+  public DbSet<Models.SuperAdmin.SuperAdminWebhookDelivery> SuperAdminWebhookDeliveries { get; set; } = null!;
+  public DbSet<Models.SuperAdmin.SuperAdminFeatureFlag> SuperAdminFeatureFlags { get; set; } = null!;
+  public DbSet<Models.SuperAdmin.SuperAdminHealthMetric> SuperAdminHealthMetrics { get; set; } = null!;
+  public DbSet<Models.SuperAdmin.SuperAdminDataExport> SuperAdminDataExports { get; set; } = null!;
+
   public PziDbContext(DbContextOptions<PziDbContext> options)
       : base(options)
   {
@@ -106,6 +116,9 @@ public class PziDbContext : DbContext
       entity.HasIndex(e => e.Domain).IsUnique();
       entity.HasIndex(e => e.Name).IsUnique();
     });
+
+    // Configure SuperAdmin entities
+    ConfigureSuperAdminEntities(modelBuilder);
 
     // Configure global query filters for tenant isolation
     SetupGlobalQueryFilters(modelBuilder);
@@ -824,5 +837,188 @@ public class PziDbContext : DbContext
     {
       entry.Entity.TenantId = tenantId;
     }
+  }
+
+  private void ConfigureSuperAdminEntities(ModelBuilder modelBuilder)
+  {
+    using var _ = modelBuilder;
+
+    // Configure SuperAdminUser
+    modelBuilder.Entity<Models.SuperAdmin.SuperAdminUser>(entity =>
+    {
+      entity.HasKey(e => e.UserId);
+      entity.Property(e => e.Email).IsRequired().HasMaxLength(200);
+      entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
+      entity.Property(e => e.Role).IsRequired().HasMaxLength(50);
+      entity.Property(e => e.CreatedBy).HasMaxLength(100);
+      entity.Property(e => e.LastModifiedBy).HasMaxLength(100);
+      entity.Property(e => e.ScopedToTenantId).HasMaxLength(50);
+      entity.Property(e => e.Permissions).HasMaxLength(1000);
+      entity.Property(e => e.LastLoginIp).HasMaxLength(50);
+
+      entity.HasIndex(e => e.Email).IsUnique();
+      entity.HasIndex(e => e.IsActive);
+      entity.HasIndex(e => e.Role);
+
+      entity.HasOne(e => e.ScopedToTenant)
+        .WithMany()
+        .HasForeignKey(e => e.ScopedToTenantId)
+        .OnDelete(DeleteBehavior.SetNull);
+    });
+
+    // Configure SuperAdminSession
+    modelBuilder.Entity<Models.SuperAdmin.SuperAdminSession>(entity =>
+    {
+      entity.HasKey(e => e.Id);
+      entity.Property(e => e.UserId).IsRequired().HasMaxLength(100);
+      entity.Property(e => e.SessionToken).IsRequired().HasMaxLength(100);
+      entity.Property(e => e.ImpersonatedTenantId).HasMaxLength(50);
+      entity.Property(e => e.ImpersonatedUserId).HasMaxLength(100);
+      entity.Property(e => e.IpAddress).IsRequired().HasMaxLength(50);
+      entity.Property(e => e.UserAgent).IsRequired().HasMaxLength(200);
+      entity.Property(e => e.Status).HasMaxLength(20);
+
+      entity.HasIndex(e => e.SessionToken).IsUnique();
+      entity.HasIndex(e => e.Status);
+      entity.HasIndex(e => e.ExpiresAt);
+
+      entity.HasOne(e => e.User)
+        .WithMany(u => u.Sessions)
+        .HasForeignKey(e => e.UserId)
+        .OnDelete(DeleteBehavior.Cascade);
+
+      entity.HasOne(e => e.ImpersonatedTenant)
+        .WithMany()
+        .HasForeignKey(e => e.ImpersonatedTenantId)
+        .OnDelete(DeleteBehavior.SetNull);
+    });
+
+    // Configure SuperAdminAuditLog
+    modelBuilder.Entity<Models.SuperAdmin.SuperAdminAuditLog>(entity =>
+    {
+      entity.HasKey(e => e.Id);
+      entity.Property(e => e.Operation).IsRequired().HasMaxLength(100);
+      entity.Property(e => e.EntityType).IsRequired().HasMaxLength(100);
+      entity.Property(e => e.EntityId).HasMaxLength(100);
+      entity.Property(e => e.PerformedBy).IsRequired().HasMaxLength(100);
+      entity.Property(e => e.UserAgent).IsRequired().HasMaxLength(200);
+      entity.Property(e => e.IpAddress).IsRequired().HasMaxLength(50);
+      entity.Property(e => e.CorrelationId).IsRequired().HasMaxLength(100);
+      entity.Property(e => e.TenantId).HasMaxLength(50);
+      entity.Property(e => e.ImpersonatedTenantId).HasMaxLength(50);
+      entity.Property(e => e.AdditionalContext).HasMaxLength(500);
+      entity.Property(e => e.Severity).IsRequired().HasMaxLength(20);
+      entity.Property(e => e.IntegrityHash).HasMaxLength(100);
+
+      entity.HasIndex(e => e.Operation);
+      entity.HasIndex(e => e.EntityType);
+      entity.HasIndex(e => e.PerformedBy);
+      entity.HasIndex(e => e.Timestamp);
+      entity.HasIndex(e => e.Severity);
+      entity.HasIndex(e => e.TenantId);
+      entity.HasIndex(e => e.CorrelationId);
+    });
+
+    // Configure SuperAdminNotificationConfig
+    modelBuilder.Entity<Models.SuperAdmin.SuperAdminNotificationConfig>(entity =>
+    {
+      entity.HasKey(e => e.Id);
+      entity.Property(e => e.EventType).IsRequired().HasMaxLength(50);
+      entity.Property(e => e.TenantId).HasMaxLength(50);
+      entity.Property(e => e.Channel).IsRequired().HasMaxLength(20);
+      entity.Property(e => e.Configuration).IsRequired();
+      entity.Property(e => e.Priority).HasMaxLength(20);
+      entity.Property(e => e.Filter).HasMaxLength(500);
+
+      entity.HasIndex(e => e.EventType);
+      entity.HasIndex(e => e.IsActive);
+
+      entity.HasOne(e => e.Tenant)
+        .WithMany()
+        .HasForeignKey(e => e.TenantId)
+        .OnDelete(DeleteBehavior.Cascade);
+    });
+
+    // Configure SuperAdminWebhookDelivery
+    modelBuilder.Entity<Models.SuperAdmin.SuperAdminWebhookDelivery>(entity =>
+    {
+      entity.HasKey(e => e.Id);
+      entity.Property(e => e.EventType).IsRequired().HasMaxLength(50);
+      entity.Property(e => e.EventId).IsRequired().HasMaxLength(100);
+      entity.Property(e => e.Payload).IsRequired();
+      entity.Property(e => e.TargetUrl).IsRequired().HasMaxLength(500);
+      entity.Property(e => e.Status).HasMaxLength(20);
+      entity.Property(e => e.LastErrorMessage).HasMaxLength(100);
+      entity.Property(e => e.IdempotencyKey).HasMaxLength(100);
+      entity.Property(e => e.Signature).HasMaxLength(200);
+
+      entity.HasIndex(e => e.EventType);
+      entity.HasIndex(e => e.Status);
+      entity.HasIndex(e => e.NextRetryAt);
+      entity.HasIndex(e => e.IdempotencyKey);
+
+      entity.HasOne(e => e.Config)
+        .WithMany()
+        .HasForeignKey(e => e.ConfigId)
+        .OnDelete(DeleteBehavior.Cascade);
+    });
+
+    // Configure SuperAdminFeatureFlag
+    modelBuilder.Entity<Models.SuperAdmin.SuperAdminFeatureFlag>(entity =>
+    {
+      entity.HasKey(e => e.Key);
+      entity.Property(e => e.Key).HasMaxLength(100);
+      entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
+      entity.Property(e => e.Description).HasMaxLength(500);
+      entity.Property(e => e.TenantId).HasMaxLength(50);
+      entity.Property(e => e.Configuration).HasMaxLength(1000);
+      entity.Property(e => e.CreatedBy).HasMaxLength(100);
+
+      entity.HasIndex(e => e.IsEnabled);
+      entity.HasIndex(e => e.TenantId);
+
+      entity.HasOne(e => e.Tenant)
+        .WithMany()
+        .HasForeignKey(e => e.TenantId)
+        .OnDelete(DeleteBehavior.Cascade);
+    });
+
+    // Configure SuperAdminHealthMetric
+    modelBuilder.Entity<Models.SuperAdmin.SuperAdminHealthMetric>(entity =>
+    {
+      entity.HasKey(e => e.Id);
+      entity.Property(e => e.MetricName).IsRequired().HasMaxLength(100);
+      entity.Property(e => e.Unit).IsRequired().HasMaxLength(20);
+      entity.Property(e => e.TenantId).HasMaxLength(50);
+      entity.Property(e => e.Source).HasMaxLength(100);
+      entity.Property(e => e.Tags).HasMaxLength(200);
+
+      entity.HasIndex(e => e.MetricName);
+      entity.HasIndex(e => e.Timestamp);
+      entity.HasIndex(e => e.TenantId);
+    });
+
+    // Configure SuperAdminDataExport
+    modelBuilder.Entity<Models.SuperAdmin.SuperAdminDataExport>(entity =>
+    {
+      entity.HasKey(e => e.Id);
+      entity.Property(e => e.ExportType).IsRequired().HasMaxLength(50);
+      entity.Property(e => e.TenantId).HasMaxLength(50);
+      entity.Property(e => e.RequestedBy).IsRequired().HasMaxLength(100);
+      entity.Property(e => e.Status).HasMaxLength(20);
+      entity.Property(e => e.Format).IsRequired().HasMaxLength(20);
+      entity.Property(e => e.Parameters).HasMaxLength(1000);
+      entity.Property(e => e.FilePath).HasMaxLength(500);
+      entity.Property(e => e.ErrorMessage).HasMaxLength(500);
+
+      entity.HasIndex(e => e.Status);
+      entity.HasIndex(e => e.CreatedAt);
+      entity.HasIndex(e => e.RequestedBy);
+
+      entity.HasOne(e => e.Tenant)
+        .WithMany()
+        .HasForeignKey(e => e.TenantId)
+        .OnDelete(DeleteBehavior.SetNull);
+    });
   }
 }
