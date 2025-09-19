@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace PziApi.Models;
 
-public class SpecimenImage
+public class SpecimenImage : TenantEntity
 {
   public int Id { get; set; }
   public int SpecimenId { get; set; }
@@ -15,7 +15,7 @@ public class SpecimenImage
   public Specimen? Specimen { get; set; }
 }
 
-public class CadaverPartner
+public class CadaverPartner : TenantEntity
 {
   public int Id { get; set; }
   public string Keyword { get; set; } = null!;
@@ -33,7 +33,7 @@ public class CadaverPartner
   public DateTime? ModifiedAt { get; set; }
 }
 
-public class Cadaver
+public class Cadaver : TenantEntity
 {
   public int Id { get; set; }
   public int SpecimenId { get; set; }
@@ -73,7 +73,7 @@ public class ContractActionType
   public string? Note { get; set; }
 }
 
-public class ContractAction
+public class ContractAction : TenantEntity
 {
   public int Id { get; set; }
   public int ContractId { get; set; }
@@ -106,7 +106,7 @@ public class ContractType
   public string? Note { get; set; }
 }
 
-public class Contract
+public class Contract : TenantEntity
 {
   public int Id { get; set; }
   public string Number { get; set; } = null!;
@@ -135,7 +135,7 @@ public class DecrementReason
   public string? Note { get; set; }
 }
 
-public class DocumentSpecies
+public class DocumentSpecies : TenantEntity
 {
   public int Id { get; set; }
   public int SpeciesId { get; set; }
@@ -150,7 +150,7 @@ public class DocumentSpecies
   public SpeciesDocumentType? DocumentType { get; set; }
 }
 
-public class DocumentSpecimen
+public class DocumentSpecimen : TenantEntity
 {
   public int Id { get; set; }
   public int SpecimenId { get; set; }
@@ -211,7 +211,7 @@ public class Rearing
   public string? Note { get; set; }
 }
 
-public class Marking
+public class Marking : TenantEntity
 {
   public int Id { get; set; }
   public int SpecimenId { get; set; }
@@ -238,7 +238,7 @@ public class MarkingType
   public string? Note { get; set; }
 }
 
-public class Movement
+public class Movement : TenantEntity
 {
   public int Id { get; set; }
   public int SpecimenId { get; set; }
@@ -278,7 +278,7 @@ public class OriginType
   public string? Note { get; set; }
 }
 
-public class Partner
+public class Partner : TenantEntity
 {
   public int Id { get; set; }
   public string Keyword { get; set; } = null!;
@@ -296,7 +296,7 @@ public class Partner
   public string? Note { get; set; }
 }
 
-public class Placement
+public class Placement : TenantEntity
 {
   public int Id { get; set; }
   public int? SpecimenId { get; set; }
@@ -328,7 +328,7 @@ public class RecordActionType
   public string? Note { get; set; }
 }
 
-public class RecordSpecies
+public class RecordSpecies : TenantEntity
 {
   public int Id { get; set; }
   public int SpeciesId { get; set; }
@@ -341,7 +341,7 @@ public class RecordSpecies
   public Species Species { get; set; } = null!;
 }
 
-public class RecordSpecimen
+public class RecordSpecimen : TenantEntity
 {
   public int Id { get; set; }
   public int SpecimenId { get; set; }
@@ -375,7 +375,7 @@ public class Section
   public string? Code { get; set; }
 }
 
-public class Species
+public class Species : TenantEntity
 {
   public int Id { get; set; } // Primary Key, not nullable
   public int TaxonomyGenusId { get; set; } // Foreign Key, not nullable
@@ -465,7 +465,7 @@ public class SpecimenDocumentType
   public string? Note { get; set; }
 }
 
-public class Specimen
+public class Specimen : TenantEntity
 {
   public int Id { get; set; }
   public int SpeciesId { get; set; }
@@ -793,7 +793,7 @@ public class OrganizationLevel
   public ICollection<PziApi.Models.Journal.JournalActionTypesToOrganizationLevels>? JournalActionTypes { get; set; }
 }
 
-public class SpecimenPlacement
+public class SpecimenPlacement : TenantEntity
 {
   public int Id { get; set; }
   public int SpecimenId { get; set; }
@@ -852,7 +852,7 @@ public class JournalMovementEntrySpecimen
   public ICollection<JournalMovementEntrySpecimenAttribute>? Attributes { get; set; }
 }
 
-public class UserFlaggedDistrict
+public class UserFlaggedDistrict : TenantEntity
 {
   public int Id { get; set; }
   public int UserId { get; set; }
@@ -864,7 +864,7 @@ public class UserFlaggedDistrict
   public OrganizationLevel? District { get; set; }
 }
 
-public class UserFlaggedSpecies
+public class UserFlaggedSpecies : TenantEntity
 {
   public int Id { get; set; }
   public int UserId { get; set; }

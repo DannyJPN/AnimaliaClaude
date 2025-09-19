@@ -1,6 +1,6 @@
 namespace PziApi.Models.Journal;
 
-public class JournalEntryAttribute
+public class JournalEntryAttribute : TenantEntity
 {
   public int Id { get; set; }
   public int JournalEntryId { get; set; }
