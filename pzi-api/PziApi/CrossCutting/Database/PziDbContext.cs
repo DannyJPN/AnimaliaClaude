@@ -1,12 +1,14 @@
 using Microsoft.EntityFrameworkCore;
 using PziApi.Models;
 using PziApi.Models.Journal;
+using PziApi.CrossCutting.Tenant;
 
 
 namespace PziApi.CrossCutting.Database;
 
 public class PziDbContext : DbContext
 {
+  private readonly ITenantContext? _tenantContext;
   public DbSet<SpecimenImage> SpecimenImages { get; set; } = null!;
   public DbSet<CadaverPartner> CadaverPartners { get; set; } = null!;
   public DbSet<Cadaver> Cadavers { get; set; } = null!;
@@ -72,14 +74,41 @@ public class PziDbContext : DbContext
   public DbSet<PziApi.Models.Journal.JournalEntryAudit> JournalEntryAudits { get; set; } = null!;
   public DbSet<PziApi.Models.Journal.JournalActionTypesToOrganizationLevels> JournalActionTypesToOrganizationLevels { get; set; } = null!;
 
+  // Tenant management
+  public DbSet<Models.Tenant> Tenants { get; set; } = null!;
+
   public PziDbContext(DbContextOptions<PziDbContext> options)
       : base(options)
   {
   }
 
+  public PziDbContext(DbContextOptions<PziDbContext> options, ITenantContext tenantContext)
+      : base(options)
+  {
+    _tenantContext = tenantContext;
+  }
+
   protected override void OnModelCreating(ModelBuilder modelBuilder)
   {
     base.OnModelCreating(modelBuilder);
+
+    // Configure Tenant entity
+    modelBuilder.Entity<Models.Tenant>(entity =>
+    {
+      entity.HasKey(e => e.Id);
+      entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
+      entity.Property(e => e.DisplayName).IsRequired().HasMaxLength(200);
+      entity.Property(e => e.Domain).HasMaxLength(100);
+      entity.Property(e => e.ConnectionString).HasMaxLength(500);
+      entity.Property(e => e.Configuration).HasMaxLength(4000);
+      entity.Property(e => e.Theme).HasMaxLength(4000);
+      entity.Property(e => e.Features).HasMaxLength(4000);
+      entity.HasIndex(e => e.Domain).IsUnique();
+      entity.HasIndex(e => e.Name).IsUnique();
+    });
+
+    // Configure global query filters for tenant isolation
+    SetupGlobalQueryFilters(modelBuilder);
 
     // Configure TaxonomyPhyla entity
     modelBuilder.Entity<TaxonomyPhylum>(entity =>
@@ -718,5 +747,82 @@ public class PziDbContext : DbContext
             .WithMany(e => e.JournalActionTypes)
             .HasForeignKey(d => d.OrganizationLevelId);
     });
+  }
+
+  private void SetupGlobalQueryFilters(ModelBuilder modelBuilder)
+  {
+    // Apply global query filters for tenant isolation
+    // Use default tenant if no tenant context is available to ensure security
+
+    // Core entities
+    modelBuilder.Entity<Specimen>().HasQueryFilter(e => e.TenantId == (_tenantContext != null ? _tenantContext.CurrentTenantId : "default"));
+    modelBuilder.Entity<Models.Species>().HasQueryFilter(e => e.TenantId == (_tenantContext != null ? _tenantContext.CurrentTenantId : "default"));
+    modelBuilder.Entity<SpecimenImage>().HasQueryFilter(e => e.TenantId == (_tenantContext != null ? _tenantContext.CurrentTenantId : "default"));
+
+    // Movement and placement
+    modelBuilder.Entity<Movement>().HasQueryFilter(e => e.TenantId == (_tenantContext != null ? _tenantContext.CurrentTenantId : "default"));
+    modelBuilder.Entity<Placement>().HasQueryFilter(e => e.TenantId == (_tenantContext != null ? _tenantContext.CurrentTenantId : "default"));
+    modelBuilder.Entity<SpecimenPlacement>().HasQueryFilter(e => e.TenantId == (_tenantContext != null ? _tenantContext.CurrentTenantId : "default"));
+
+    // Contracts and partners
+    modelBuilder.Entity<Contract>().HasQueryFilter(e => e.TenantId == (_tenantContext != null ? _tenantContext.CurrentTenantId : "default"));
+    modelBuilder.Entity<ContractAction>().HasQueryFilter(e => e.TenantId == (_tenantContext != null ? _tenantContext.CurrentTenantId : "default"));
+    modelBuilder.Entity<Partner>().HasQueryFilter(e => e.TenantId == (_tenantContext != null ? _tenantContext.CurrentTenantId : "default"));
+
+    // Documents
+    modelBuilder.Entity<DocumentSpecimen>().HasQueryFilter(e => e.TenantId == (_tenantContext != null ? _tenantContext.CurrentTenantId : "default"));
+    modelBuilder.Entity<DocumentSpecies>().HasQueryFilter(e => e.TenantId == (_tenantContext != null ? _tenantContext.CurrentTenantId : "default"));
+
+    // Cadavers
+    modelBuilder.Entity<Cadaver>().HasQueryFilter(e => e.TenantId == (_tenantContext != null ? _tenantContext.CurrentTenantId : "default"));
+    modelBuilder.Entity<CadaverPartner>().HasQueryFilter(e => e.TenantId == (_tenantContext != null ? _tenantContext.CurrentTenantId : "default"));
+
+    // Markings
+    modelBuilder.Entity<Marking>().HasQueryFilter(e => e.TenantId == (_tenantContext != null ? _tenantContext.CurrentTenantId : "default"));
+
+    // Journal system
+    modelBuilder.Entity<JournalEntry>().HasQueryFilter(e => e.TenantId == (_tenantContext != null ? _tenantContext.CurrentTenantId : "default"));
+    modelBuilder.Entity<JournalEntryAudit>().HasQueryFilter(e => e.TenantId == (_tenantContext != null ? _tenantContext.CurrentTenantId : "default"));
+    modelBuilder.Entity<JournalEntrySpecimen>().HasQueryFilter(e => e.TenantId == (_tenantContext != null ? _tenantContext.CurrentTenantId : "default"));
+    modelBuilder.Entity<JournalEntryAttribute>().HasQueryFilter(e => e.TenantId == (_tenantContext != null ? _tenantContext.CurrentTenantId : "default"));
+    modelBuilder.Entity<JournalEntrySpecimenAttribute>().HasQueryFilter(e => e.TenantId == (_tenantContext != null ? _tenantContext.CurrentTenantId : "default"));
+
+    // User preferences
+    modelBuilder.Entity<UserFlaggedSpecies>().HasQueryFilter(e => e.TenantId == (_tenantContext != null ? _tenantContext.CurrentTenantId : "default"));
+    modelBuilder.Entity<UserFlaggedDistrict>().HasQueryFilter(e => e.TenantId == (_tenantContext != null ? _tenantContext.CurrentTenantId : "default"));
+
+    // Records
+    modelBuilder.Entity<RecordSpecimen>().HasQueryFilter(e => e.TenantId == (_tenantContext != null ? _tenantContext.CurrentTenantId : "default"));
+    modelBuilder.Entity<RecordSpecies>().HasQueryFilter(e => e.TenantId == (_tenantContext != null ? _tenantContext.CurrentTenantId : "default"));
+  }
+
+  public override int SaveChanges()
+  {
+    SetTenantId();
+    return base.SaveChanges();
+  }
+
+  public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+  {
+    SetTenantId();
+    return base.SaveChangesAsync(cancellationToken);
+  }
+
+  private void SetTenantId()
+  {
+    var tenantId = _tenantContext?.CurrentTenantId;
+    if (string.IsNullOrEmpty(tenantId))
+    {
+      // Use default tenant if no tenant context is available
+      tenantId = "default";
+    }
+
+    var entries = ChangeTracker.Entries<TenantEntity>()
+        .Where(e => e.State == EntityState.Added && string.IsNullOrEmpty(e.Entity.TenantId));
+
+    foreach (var entry in entries)
+    {
+      entry.Entity.TenantId = tenantId;
+    }
   }
 }

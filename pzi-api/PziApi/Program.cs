@@ -43,6 +43,7 @@ using PziApi.JournalEntries;
 using PziApi.BirthMethods;
 using PziApi.Zoos;
 using PziApi.Rearings;
+using PziApi.CrossCutting.Tenant;
 
 internal class Program
 {
@@ -161,6 +162,9 @@ internal class Program
       configuration.WriteTo.Console();
     });
 
+    // Register tenant services
+    builder.Services.AddScoped<ITenantContext, TenantContext>();
+
     builder.Services.AddDbContext<PziDbContext>((provider, options) =>
     {
       options.UseNpgsql(builder.Configuration.GetConnectionString("Default"), npgsqlOptionsAction: npgsqlOptions =>
@@ -225,6 +229,7 @@ internal class Program
     builder.Services.AddTransient<ApiKeyValidationMiddleware>();
     builder.Services.AddTransient<Auth0JwtValidationMiddleware>();
     builder.Services.AddHttpClient<Auth0JwtValidationMiddleware>();
+    builder.Services.AddTransient<TenantMiddleware>();
 
     builder.Services.Configure<PermissionOptions>(builder.Configuration.GetSection(PermissionOptions.SectionName));
 
@@ -280,6 +285,9 @@ internal class Program
 
     // Use Auth0 JWT validation middleware (which also supports API key fallback)
     app.UseMiddleware<Auth0JwtValidationMiddleware>();
+
+    // Use tenant resolution middleware
+    app.UseMiddleware<TenantMiddleware>();
 
     RegisterEndpoints(app);
 

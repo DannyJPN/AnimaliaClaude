@@ -1,6 +1,6 @@
 namespace PziApi.Models.Journal;
 
-public class JournalEntryAudit
+public class JournalEntryAudit : TenantEntity
 {
     public long Id { get; set; }
     public int JournalEntryId { get; set; }
