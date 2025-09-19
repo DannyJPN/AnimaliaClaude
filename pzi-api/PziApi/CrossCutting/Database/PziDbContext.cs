@@ -752,48 +752,48 @@ public class PziDbContext : DbContext
   private void SetupGlobalQueryFilters(ModelBuilder modelBuilder)
   {
     // Apply global query filters for tenant isolation
-    // Only apply filters if tenant context is available
+    // Use default tenant if no tenant context is available to ensure security
 
     // Core entities
-    modelBuilder.Entity<Specimen>().HasQueryFilter(e => _tenantContext == null || e.TenantId == _tenantContext.CurrentTenantId);
-    modelBuilder.Entity<Models.Species>().HasQueryFilter(e => _tenantContext == null || e.TenantId == _tenantContext.CurrentTenantId);
-    modelBuilder.Entity<SpecimenImage>().HasQueryFilter(e => _tenantContext == null || e.TenantId == _tenantContext.CurrentTenantId);
+    modelBuilder.Entity<Specimen>().HasQueryFilter(e => e.TenantId == (_tenantContext != null ? _tenantContext.CurrentTenantId : "default"));
+    modelBuilder.Entity<Models.Species>().HasQueryFilter(e => e.TenantId == (_tenantContext != null ? _tenantContext.CurrentTenantId : "default"));
+    modelBuilder.Entity<SpecimenImage>().HasQueryFilter(e => e.TenantId == (_tenantContext != null ? _tenantContext.CurrentTenantId : "default"));
 
     // Movement and placement
-    modelBuilder.Entity<Movement>().HasQueryFilter(e => _tenantContext == null || e.TenantId == _tenantContext.CurrentTenantId);
-    modelBuilder.Entity<Placement>().HasQueryFilter(e => _tenantContext == null || e.TenantId == _tenantContext.CurrentTenantId);
-    modelBuilder.Entity<SpecimenPlacement>().HasQueryFilter(e => _tenantContext == null || e.TenantId == _tenantContext.CurrentTenantId);
+    modelBuilder.Entity<Movement>().HasQueryFilter(e => e.TenantId == (_tenantContext != null ? _tenantContext.CurrentTenantId : "default"));
+    modelBuilder.Entity<Placement>().HasQueryFilter(e => e.TenantId == (_tenantContext != null ? _tenantContext.CurrentTenantId : "default"));
+    modelBuilder.Entity<SpecimenPlacement>().HasQueryFilter(e => e.TenantId == (_tenantContext != null ? _tenantContext.CurrentTenantId : "default"));
 
     // Contracts and partners
-    modelBuilder.Entity<Contract>().HasQueryFilter(e => _tenantContext == null || e.TenantId == _tenantContext.CurrentTenantId);
-    modelBuilder.Entity<ContractAction>().HasQueryFilter(e => _tenantContext == null || e.TenantId == _tenantContext.CurrentTenantId);
-    modelBuilder.Entity<Partner>().HasQueryFilter(e => _tenantContext == null || e.TenantId == _tenantContext.CurrentTenantId);
+    modelBuilder.Entity<Contract>().HasQueryFilter(e => e.TenantId == (_tenantContext != null ? _tenantContext.CurrentTenantId : "default"));
+    modelBuilder.Entity<ContractAction>().HasQueryFilter(e => e.TenantId == (_tenantContext != null ? _tenantContext.CurrentTenantId : "default"));
+    modelBuilder.Entity<Partner>().HasQueryFilter(e => e.TenantId == (_tenantContext != null ? _tenantContext.CurrentTenantId : "default"));
 
     // Documents
-    modelBuilder.Entity<DocumentSpecimen>().HasQueryFilter(e => _tenantContext == null || e.TenantId == _tenantContext.CurrentTenantId);
-    modelBuilder.Entity<DocumentSpecies>().HasQueryFilter(e => _tenantContext == null || e.TenantId == _tenantContext.CurrentTenantId);
+    modelBuilder.Entity<DocumentSpecimen>().HasQueryFilter(e => e.TenantId == (_tenantContext != null ? _tenantContext.CurrentTenantId : "default"));
+    modelBuilder.Entity<DocumentSpecies>().HasQueryFilter(e => e.TenantId == (_tenantContext != null ? _tenantContext.CurrentTenantId : "default"));
 
     // Cadavers
-    modelBuilder.Entity<Cadaver>().HasQueryFilter(e => _tenantContext == null || e.TenantId == _tenantContext.CurrentTenantId);
-    modelBuilder.Entity<CadaverPartner>().HasQueryFilter(e => _tenantContext == null || e.TenantId == _tenantContext.CurrentTenantId);
+    modelBuilder.Entity<Cadaver>().HasQueryFilter(e => e.TenantId == (_tenantContext != null ? _tenantContext.CurrentTenantId : "default"));
+    modelBuilder.Entity<CadaverPartner>().HasQueryFilter(e => e.TenantId == (_tenantContext != null ? _tenantContext.CurrentTenantId : "default"));
 
     // Markings
-    modelBuilder.Entity<Marking>().HasQueryFilter(e => _tenantContext == null || e.TenantId == _tenantContext.CurrentTenantId);
+    modelBuilder.Entity<Marking>().HasQueryFilter(e => e.TenantId == (_tenantContext != null ? _tenantContext.CurrentTenantId : "default"));
 
     // Journal system
-    modelBuilder.Entity<JournalEntry>().HasQueryFilter(e => _tenantContext == null || e.TenantId == _tenantContext.CurrentTenantId);
-    modelBuilder.Entity<JournalEntryAudit>().HasQueryFilter(e => _tenantContext == null || e.TenantId == _tenantContext.CurrentTenantId);
-    modelBuilder.Entity<JournalEntrySpecimen>().HasQueryFilter(e => _tenantContext == null || e.TenantId == _tenantContext.CurrentTenantId);
-    modelBuilder.Entity<JournalEntryAttribute>().HasQueryFilter(e => _tenantContext == null || e.TenantId == _tenantContext.CurrentTenantId);
-    modelBuilder.Entity<JournalEntrySpecimenAttribute>().HasQueryFilter(e => _tenantContext == null || e.TenantId == _tenantContext.CurrentTenantId);
+    modelBuilder.Entity<JournalEntry>().HasQueryFilter(e => e.TenantId == (_tenantContext != null ? _tenantContext.CurrentTenantId : "default"));
+    modelBuilder.Entity<JournalEntryAudit>().HasQueryFilter(e => e.TenantId == (_tenantContext != null ? _tenantContext.CurrentTenantId : "default"));
+    modelBuilder.Entity<JournalEntrySpecimen>().HasQueryFilter(e => e.TenantId == (_tenantContext != null ? _tenantContext.CurrentTenantId : "default"));
+    modelBuilder.Entity<JournalEntryAttribute>().HasQueryFilter(e => e.TenantId == (_tenantContext != null ? _tenantContext.CurrentTenantId : "default"));
+    modelBuilder.Entity<JournalEntrySpecimenAttribute>().HasQueryFilter(e => e.TenantId == (_tenantContext != null ? _tenantContext.CurrentTenantId : "default"));
 
     // User preferences
-    modelBuilder.Entity<UserFlaggedSpecies>().HasQueryFilter(e => _tenantContext == null || e.TenantId == _tenantContext.CurrentTenantId);
-    modelBuilder.Entity<UserFlaggedDistrict>().HasQueryFilter(e => _tenantContext == null || e.TenantId == _tenantContext.CurrentTenantId);
+    modelBuilder.Entity<UserFlaggedSpecies>().HasQueryFilter(e => e.TenantId == (_tenantContext != null ? _tenantContext.CurrentTenantId : "default"));
+    modelBuilder.Entity<UserFlaggedDistrict>().HasQueryFilter(e => e.TenantId == (_tenantContext != null ? _tenantContext.CurrentTenantId : "default"));
 
     // Records
-    modelBuilder.Entity<RecordSpecimen>().HasQueryFilter(e => _tenantContext == null || e.TenantId == _tenantContext.CurrentTenantId);
-    modelBuilder.Entity<RecordSpecies>().HasQueryFilter(e => _tenantContext == null || e.TenantId == _tenantContext.CurrentTenantId);
+    modelBuilder.Entity<RecordSpecimen>().HasQueryFilter(e => e.TenantId == (_tenantContext != null ? _tenantContext.CurrentTenantId : "default"));
+    modelBuilder.Entity<RecordSpecies>().HasQueryFilter(e => e.TenantId == (_tenantContext != null ? _tenantContext.CurrentTenantId : "default"));
   }
 
   public override int SaveChanges()
@@ -812,7 +812,10 @@ public class PziDbContext : DbContext
   {
     var tenantId = _tenantContext?.CurrentTenantId;
     if (string.IsNullOrEmpty(tenantId))
-      return;
+    {
+      // Use default tenant if no tenant context is available
+      tenantId = "default";
+    }
 
     var entries = ChangeTracker.Entries<TenantEntity>()
         .Where(e => e.State == EntityState.Added && string.IsNullOrEmpty(e.Entity.TenantId));

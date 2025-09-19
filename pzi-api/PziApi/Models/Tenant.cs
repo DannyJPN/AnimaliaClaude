@@ -119,8 +119,9 @@ public class TenantFeatures
 // Base entity class for tenant-aware entities
 public abstract class TenantEntity
 {
+    [Required]
     [MaxLength(50)]
-    public string? TenantId { get; set; }
+    public required string TenantId { get; set; }
 
     public Tenant? Tenant { get; set; }
 }

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PziApi.CrossCutting.Database;
 using PziApi.CrossCutting.Tenant;
+using PziApi.CrossCutting.Auth;
 using PziApi.Models;
 
 namespace PziApi.Controllers;
@@ -24,10 +25,10 @@ public class TenantsController : ControllerBase
     }
 
     [HttpGet]
+    [RequireAdminRole]
     public async Task<ActionResult<IEnumerable<Models.Tenant>>> GetTenants()
     {
-        // Only allow super admin or system admin to view all tenants
-        // For now, return all active tenants
+        // Only allow admin users to view all tenants
         var tenants = await _dbContext.Tenants
             .Where(t => t.IsActive)
             .OrderBy(t => t.DisplayName)
@@ -37,8 +38,10 @@ public class TenantsController : ControllerBase
     }
 
     [HttpGet("{id}")]
+    [RequireAdminRole]
     public async Task<ActionResult<Models.Tenant>> GetTenant(string id)
     {
+        // Only allow admin users to view specific tenant details
         var tenant = await _dbContext.Tenants
             .Where(t => t.Id == id && t.IsActive)
             .FirstOrDefaultAsync();
@@ -114,6 +117,7 @@ public class TenantsController : ControllerBase
     }
 
     [HttpPost]
+    [RequireAdminRole]
     public async Task<ActionResult<Models.Tenant>> CreateTenant([FromBody] CreateTenantRequest request)
     {
         // Validate input
@@ -167,6 +171,7 @@ public class TenantsController : ControllerBase
     }
 
     [HttpPut("{id}")]
+    [RequireAdminRole]
     public async Task<ActionResult<Models.Tenant>> UpdateTenant(string id, [FromBody] UpdateTenantRequest request)
     {
         var tenant = await _dbContext.Tenants
@@ -213,6 +218,7 @@ public class TenantsController : ControllerBase
     }
 
     [HttpDelete("{id}")]
+    [RequireAdminRole]
     public async Task<ActionResult> DeleteTenant(string id)
     {
         var tenant = await _dbContext.Tenants
