@@ -173,10 +173,38 @@ public class Auth0JwtValidationMiddleware : IMiddleware
         }
       }
 
-      var tenantClaim = principal.FindFirst("custom:tenant");
-      if (tenantClaim != null)
+      // Handle tenant claim - try custom:tenant first, then org_name, then determine from email
+      var tenantClaim = principal.FindFirst("custom:tenant")?.Value;
+      if (string.IsNullOrEmpty(tenantClaim))
       {
-        identity.AddClaim(new Claim("tenant", tenantClaim.Value));
+        // Try organization name from Auth0
+        tenantClaim = principal.FindFirst("org_name")?.Value;
+      }
+      if (string.IsNullOrEmpty(tenantClaim))
+      {
+        // Try to determine from email domain
+        if (!string.IsNullOrEmpty(email))
+        {
+          var domain = email.Split('@').LastOrDefault()?.ToLowerInvariant();
+          tenantClaim = domain switch
+          {
+            "zoopraha.cz" or "prague-zoo.cz" => "zoo-praha",
+            "zoobrno.cz" or "brno-zoo.cz" => "zoo-brno",
+            _ => null
+          };
+        }
+      }
+
+      if (!string.IsNullOrEmpty(tenantClaim))
+      {
+        identity.AddClaim(new Claim("tenant", tenantClaim));
+      }
+
+      // Also add organization ID if available
+      var orgIdClaim = principal.FindFirst("org_id");
+      if (orgIdClaim != null)
+      {
+        identity.AddClaim(new Claim("org_id", orgIdClaim.Value));
       }
 
       // Add standard claims

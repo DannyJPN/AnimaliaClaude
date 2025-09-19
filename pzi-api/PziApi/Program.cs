@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.OData;
 using Microsoft.OData.Edm;
 using Microsoft.OData.ModelBuilder;
 using PziApi.CrossCutting.Auth;
+using PziApi.CrossCutting.Tenant;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -103,6 +104,7 @@ internal class Program
     builder.EntitySet<PziApi.Models.UserFlaggedSpecies>("UserFlaggedSpecies");
     builder.EntitySet<PziApi.Models.SpecimenImage>("SpecimenImages");
     builder.EntitySet<PziApi.Models.OriginType>("OriginTypes");
+    builder.EntitySet<PziApi.Models.Tenant>("Tenants");
 
     builder.EntityType<PziApi.Models.OrganizationLevel>()
         .Collection
@@ -161,12 +163,25 @@ internal class Program
       configuration.WriteTo.Console();
     });
 
+    // Configure tenant services
+    builder.Services.AddScoped<ITenantContext, TenantContext>();
+    builder.Services.AddTransient<TenantResolutionMiddleware>();
+    builder.Services.AddTransient<TenantSaveChangesInterceptor>();
+
     builder.Services.AddDbContext<PziDbContext>((provider, options) =>
     {
+      var tenantContext = provider.GetService<ITenantContext>();
+      var tenantInterceptor = provider.GetService<TenantSaveChangesInterceptor>();
+
       options.UseNpgsql(builder.Configuration.GetConnectionString("Default"), npgsqlOptionsAction: npgsqlOptions =>
       {
         npgsqlOptions.CommandTimeout(240);
       });
+
+      if (tenantInterceptor != null)
+      {
+        options.AddInterceptors(tenantInterceptor);
+      }
     });
 
     builder.Services.AddEndpointsApiExplorer();
@@ -280,6 +295,9 @@ internal class Program
 
     // Use Auth0 JWT validation middleware (which also supports API key fallback)
     app.UseMiddleware<Auth0JwtValidationMiddleware>();
+
+    // Use tenant resolution middleware after authentication
+    app.UseMiddleware<TenantResolutionMiddleware>();
 
     RegisterEndpoints(app);
 

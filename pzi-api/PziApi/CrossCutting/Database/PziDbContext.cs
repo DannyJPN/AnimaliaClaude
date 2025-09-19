@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using PziApi.Models;
 using PziApi.Models.Journal;
+using PziApi.CrossCutting.Tenant;
 
 
 namespace PziApi.CrossCutting.Database;
@@ -72,9 +73,15 @@ public class PziDbContext : DbContext
   public DbSet<PziApi.Models.Journal.JournalEntryAudit> JournalEntryAudits { get; set; } = null!;
   public DbSet<PziApi.Models.Journal.JournalActionTypesToOrganizationLevels> JournalActionTypesToOrganizationLevels { get; set; } = null!;
 
-  public PziDbContext(DbContextOptions<PziDbContext> options)
+  // Multi-tenant entities
+  public DbSet<Tenant> Tenants { get; set; } = null!;
+
+  private readonly ITenantContext? _tenantContext;
+
+  public PziDbContext(DbContextOptions<PziDbContext> options, ITenantContext? tenantContext = null)
       : base(options)
   {
+    _tenantContext = tenantContext;
   }
 
   protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -718,5 +725,118 @@ public class PziDbContext : DbContext
             .WithMany(e => e.JournalActionTypes)
             .HasForeignKey(d => d.OrganizationLevelId);
     });
+
+    // Configure Tenant entity
+    modelBuilder.Entity<Tenant>(entity =>
+    {
+      entity.HasKey(e => e.Id);
+      entity.Property(e => e.Name)
+            .IsRequired()
+            .HasMaxLength(255);
+      entity.Property(e => e.DisplayName)
+            .IsRequired()
+            .HasMaxLength(255);
+      entity.Property(e => e.Subdomain)
+            .IsRequired()
+            .HasMaxLength(100);
+      entity.Property(e => e.Auth0OrganizationId)
+            .HasMaxLength(255);
+      entity.Property(e => e.ModifiedBy)
+            .HasMaxLength(64);
+
+      entity.HasIndex(e => e.Name).IsUnique();
+      entity.HasIndex(e => e.Subdomain).IsUnique();
+      entity.HasIndex(e => e.Auth0OrganizationId).IsUnique();
+    });
+
+    // Configure tenant relationships for all tenant entities
+    ConfigureTenantRelationships(modelBuilder);
+
+    // Apply global tenant filters if tenant context is available
+    if (_tenantContext != null)
+    {
+      modelBuilder.ApplyGlobalFilters(_tenantContext);
+    }
+  }
+
+  private void ConfigureTenantRelationships(ModelBuilder modelBuilder)
+  {
+    // Add foreign key relationships for all tenant entities
+    modelBuilder.Entity<Species>()
+      .HasOne(e => e.Tenant)
+      .WithMany()
+      .HasForeignKey(e => e.TenantId)
+      .OnDelete(DeleteBehavior.Restrict);
+
+    modelBuilder.Entity<Specimen>()
+      .HasOne(e => e.Tenant)
+      .WithMany()
+      .HasForeignKey(e => e.TenantId)
+      .OnDelete(DeleteBehavior.Restrict);
+
+    modelBuilder.Entity<Partner>()
+      .HasOne(e => e.Tenant)
+      .WithMany()
+      .HasForeignKey(e => e.TenantId)
+      .OnDelete(DeleteBehavior.Restrict);
+
+    modelBuilder.Entity<Contract>()
+      .HasOne(e => e.Tenant)
+      .WithMany()
+      .HasForeignKey(e => e.TenantId)
+      .OnDelete(DeleteBehavior.Restrict);
+
+    modelBuilder.Entity<Movement>()
+      .HasOne(e => e.Tenant)
+      .WithMany()
+      .HasForeignKey(e => e.TenantId)
+      .OnDelete(DeleteBehavior.Restrict);
+
+    modelBuilder.Entity<User>()
+      .HasOne(e => e.Tenant)
+      .WithMany()
+      .HasForeignKey(e => e.TenantId)
+      .OnDelete(DeleteBehavior.Restrict);
+
+    modelBuilder.Entity<OrganizationLevel>()
+      .HasOne(e => e.Tenant)
+      .WithMany()
+      .HasForeignKey(e => e.TenantId)
+      .OnDelete(DeleteBehavior.Restrict);
+
+    modelBuilder.Entity<Location>()
+      .HasOne(e => e.Tenant)
+      .WithMany()
+      .HasForeignKey(e => e.TenantId)
+      .OnDelete(DeleteBehavior.Restrict);
+
+    modelBuilder.Entity<ExpositionArea>()
+      .HasOne(e => e.Tenant)
+      .WithMany()
+      .HasForeignKey(e => e.TenantId)
+      .OnDelete(DeleteBehavior.Restrict);
+
+    modelBuilder.Entity<ExpositionSet>()
+      .HasOne(e => e.Tenant)
+      .WithMany()
+      .HasForeignKey(e => e.TenantId)
+      .OnDelete(DeleteBehavior.Restrict);
+
+    modelBuilder.Entity<JournalEntry>()
+      .HasOne(e => e.Tenant)
+      .WithMany()
+      .HasForeignKey(e => e.TenantId)
+      .OnDelete(DeleteBehavior.Restrict);
+
+    // Add indexes for better query performance
+    modelBuilder.Entity<Species>().HasIndex(e => e.TenantId);
+    modelBuilder.Entity<Specimen>().HasIndex(e => e.TenantId);
+    modelBuilder.Entity<Partner>().HasIndex(e => e.TenantId);
+    modelBuilder.Entity<Contract>().HasIndex(e => e.TenantId);
+    modelBuilder.Entity<Movement>().HasIndex(e => e.TenantId);
+    modelBuilder.Entity<User>().HasIndex(e => e.TenantId);
+    modelBuilder.Entity<OrganizationLevel>().HasIndex(e => e.TenantId);
+    modelBuilder.Entity<Location>().HasIndex(e => e.TenantId);
+    modelBuilder.Entity<JournalEntry>().HasIndex(e => e.TenantId);
   }
 }
