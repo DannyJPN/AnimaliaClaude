@@ -10,6 +10,12 @@
 - Do not create multiple branches for a single issue
 - Do not mix changes from different issues in the same branch
 
+### PR Branch Consistency Rule
+- Once a Pull Request is created, all subsequent changes must remain on the same branch
+- Never create new branches for fixes, updates, or improvements to an existing PR
+- All commits, reviews, and iterations should stay on the original PR branch
+- This ensures clear tracking of changes and maintains PR history integrity
+
 ## Development Workflow
 
 ### Setup Instructions
