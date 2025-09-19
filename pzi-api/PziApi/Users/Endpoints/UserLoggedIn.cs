@@ -13,8 +13,14 @@ namespace PziApi.Users.Endpoints;
 
 public class UserLoggedIn
 {
-  public static async Task<Results<Ok<CommonDtos.SuccessResult<Dtos.UserSettingsModel>>, BadRequest>> Handle([FromBody] Dtos.UserLoggedInRequest viewModel, PziDbContext dbContext, IOptions<PermissionOptions> permissionOptions)
+  public static async Task<Results<Ok<CommonDtos.SuccessResult<Dtos.UserSettingsModel>>, BadRequest>> Handle([FromBody] Dtos.UserLoggedInRequest viewModel, PziDbContext dbContext, IOptions<PermissionOptions> permissionOptions, ILogger<UserLoggedIn> logger)
   {
+    // Log tenant information for debugging (until full multi-tenant support is implemented)
+    if (!string.IsNullOrEmpty(viewModel.Tenant))
+    {
+      logger.LogInformation("User {UserName} authenticated with tenant: {Tenant}", viewModel.UserName, viewModel.Tenant);
+    }
+
     var user = await dbContext.Users.FirstOrDefaultAsync(u => u.UserName == viewModel.UserName);
 
     if (user == null)
