@@ -1,5 +1,5 @@
 ﻿using Dapper;
-using Microsoft.Data.SqlClient;
+using Npgsql;
 using Pzi.Data.Import;
 using Pzi.Data.Import.Services;
 using System.Diagnostics;
@@ -27,7 +27,7 @@ class Program
 
     var overallStopwatch = Stopwatch.StartNew();
 
-    await using var sqlConnection = new SqlConnection(connectionString);
+    await using var sqlConnection = new NpgsqlConnection(connectionString);
     await sqlConnection.OpenAsync();
 
     Console.WriteLine("Starting transaction.");
