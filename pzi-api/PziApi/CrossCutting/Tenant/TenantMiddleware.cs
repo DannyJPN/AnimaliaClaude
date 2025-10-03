@@ -17,21 +17,51 @@ public class TenantMiddleware
 
     public async Task InvokeAsync(HttpContext context, ITenantContext tenantContext, PziDbContext dbContext)
     {
+        // Skip tenant validation for health check, swagger, and authentication endpoints
+        var path = context.Request.Path.Value?.ToLowerInvariant() ?? "";
+        if (path.StartsWith("/health") ||
+            path.StartsWith("/swagger") ||
+            path.StartsWith("/api/auth") ||
+            path.StartsWith("/.well-known"))
+        {
+            await _next(context);
+            return;
+        }
+
         var tenantId = await ResolveTenantIdAsync(context, dbContext);
 
         if (!string.IsNullOrEmpty(tenantId))
         {
-            tenantContext.SetCurrentTenant(tenantId);
-            _logger.LogInformation("Tenant resolved: {TenantId}", tenantId);
-        }
-        else
-        {
-            // Set default tenant as fallback
-            tenantContext.SetCurrentTenant("default");
-            _logger.LogWarning("No tenant resolved, using default tenant");
+            var tenant = await dbContext.Tenants
+                .Where(t => t.Id == tenantId && t.IsActive)
+                .FirstOrDefaultAsync();
+
+            if (tenant != null)
+            {
+                tenantContext.SetCurrentTenant(tenant);
+                _logger.LogInformation("Tenant resolved and validated: {TenantId}", tenantId);
+                await _next(context);
+                return;
+            }
+            else
+            {
+                _logger.LogWarning("Tenant {TenantId} not found or inactive", tenantId);
+            }
         }
 
-        await _next(context);
+        // No valid tenant - reject request
+        _logger.LogError("Request rejected: No valid tenant context. Path: {Path}, User: {User}",
+            context.Request.Path,
+            context.User?.Identity?.Name ?? "Anonymous");
+
+        context.Response.StatusCode = StatusCodes.Status403Forbidden;
+        context.Response.ContentType = "application/json";
+        await context.Response.WriteAsJsonAsync(new
+        {
+            error = "Forbidden",
+            message = "Valid tenant context is required. Please ensure your authentication token contains valid tenant information.",
+            code = "TENANT_REQUIRED"
+        });
     }
 
     private async Task<string?> ResolveTenantIdAsync(HttpContext context, PziDbContext dbContext)
