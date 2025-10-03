@@ -69,10 +69,12 @@ The PZI (Prague Zoo Information System) project has been successfully migrated f
 ```json
 {
   "ConnectionStrings": {
-    "Default": "Host=localhost;Port=5432;Database=pzi;Username=postgres;Password=Xserver@101"
+    "Default": "Host=localhost;Port=5432;Database=pzi;Username=postgres"
   }
 }
 ```
+
+**Note**: Password should be provided via environment variables or User Secrets. See [SECURITY_SECRETS.md](SECURITY_SECRETS.md) for details.
 
 #### DbContext Configuration (Program.cs)
 **Before:**
@@ -138,7 +140,7 @@ services:
     environment:
       POSTGRES_DB: pzi
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: Xserver@101
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
     ports:
       - "5432:5432"
     volumes:

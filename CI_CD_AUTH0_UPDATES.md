@@ -203,7 +203,7 @@ services:
     environment:
       - Auth0__Domain=${AUTH0_DOMAIN:-your-tenant.auth0.com}
       - Auth0__Audience=${AUTH0_AUDIENCE:-https://pzi-api}
-      - ConnectionStrings__Default=${PZI_DB_CONNECTION_STRING:-Host=postgresql;Database=pzi;Username=postgres;Password=Xserver@101}
+      - ConnectionStrings__Default=${PZI_DB_CONNECTION_STRING:-Host=postgresql;Database=pzi;Username=postgres;Password=${POSTGRES_PASSWORD}}
       - Pzi__ApiKeys__0=${PZI_API_KEY:-Key1}
     depends_on:
       - postgresql
