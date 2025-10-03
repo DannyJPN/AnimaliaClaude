@@ -1,0 +1,37 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+build/
+dist/
+.output/
+.vercel/
+.netlify/
+
+# Test coverage
+coverage/
+
+# Environment files
+.env
+.env.*
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Lock files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Generated files
+*.min.js
+*.min.css
