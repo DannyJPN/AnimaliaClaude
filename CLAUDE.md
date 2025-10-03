@@ -26,8 +26,11 @@
 
 ### Testing & Quality
 - Run tests before committing changes
-- Follow existing code style and conventions
+- Follow existing code style and conventions (see [CODING_STANDARDS.md](CODING_STANDARDS.md))
 - Ensure security best practices, especially for multi-tenant architecture
+- Run linting and formatting tools before committing:
+  - Frontend: `npm run lint` and `npm run format` in `pzi-webapp/`
+  - Backend: Code analyzers run automatically during build
 
 ### Multi-Tenant Architecture Rules
 - All database entities must include `TenantId` for data isolation
@@ -41,3 +44,10 @@
 - `database/` - Database schemas and migrations
 - `pzi-login/` - Authentication service
 - `pzi-data-import/` - Data import utilities
+
+## Coding Standards
+Please refer to [CODING_STANDARDS.md](CODING_STANDARDS.md) for detailed information about:
+- Naming conventions (TypeScript and C#)
+- Code formatting rules
+- Best practices
+- Linting and formatting tools
