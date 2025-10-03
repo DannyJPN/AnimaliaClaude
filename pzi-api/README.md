@@ -6,9 +6,40 @@ API project that powers PZI backend.
 
 ## Database connection in local environment
 
-- To configure database connection for local development, it is preferred to use `user-secrets` provided by .net framework. They can be set from Vistual Stuio UI or from command line:
-  - `dotnet user-secrets set "ConnectionStrings:Default" "<<VALUE>>"`
-- We generally use shared instance of database (managing imported data is quite difficult to have per-user DBs), value for connection string can be provided on-demand.
+⚠️ **SECURITY**: Never commit database passwords to version control!
+
+### Option 1: User Secrets (Recommended for local development)
+
+Configure database connection using .NET User Secrets:
+
+```bash
+dotnet user-secrets set "ConnectionStrings:Default" "Host=localhost;Port=5432;Database=pzi;Username=postgres;Password=YOUR_PASSWORD"
+```
+
+User secrets are stored locally and never committed to git.
+
+### Option 2: Environment Variables
+
+Set environment variable before running the application:
+
+```bash
+# Linux/macOS
+export ConnectionStrings__Default="Host=localhost;Port=5432;Database=pzi;Username=postgres;Password=YOUR_PASSWORD"
+
+# Windows PowerShell
+$env:ConnectionStrings__Default="Host=localhost;Port=5432;Database=pzi;Username=postgres;Password=YOUR_PASSWORD"
+```
+
+### Option 3: .env file (for Docker)
+
+Copy `.env.example` to `.env` in the project root and set your password:
+
+```bash
+cp ../.env.example ../.env
+# Edit .env and set POSTGRES_PASSWORD
+```
+
+📖 For detailed security and secrets management, see [SECURITY_SECRETS.md](../SECURITY_SECRETS.md)
 
 ## Configuration values for container
 
